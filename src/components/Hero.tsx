@@ -43,7 +43,10 @@ const Hero = () => {
                 variant="outline" 
                 size="lg" 
                 className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                onClick={() => navigate('#biografia')}
+                onClick={() => {
+                  const biografiaSection = document.getElementById('biografia');
+                  biografiaSection?.scrollIntoView({ behavior: 'smooth' });
+                }}
               >
                 Conoce Mi Historia
               </Button>
