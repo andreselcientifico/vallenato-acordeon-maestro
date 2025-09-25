@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Lock, Play, CheckCircle, Clock, Users, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import Footer from "@/components/Footer";
 type UserState = 'guest' | 'logged-in' | 'premium';
 
 const CoursesPage = () => {
+  const navigate = useNavigate();
   const [userState, setUserState] = useState<UserState>('guest');
   const [purchasedCourses, setPurchasedCourses] = useState<number[]>([]);
 
@@ -115,14 +117,15 @@ const CoursesPage = () => {
     }
 
     return (
-      <Button 
-        variant="hero" 
-        className="w-full shadow-elegant"
-        size="lg"
-      >
-        <Play className="h-4 w-4 mr-2" />
-        Continuar Curso
-      </Button>
+                  <Button 
+                    variant="hero" 
+                    className="w-full shadow-elegant"
+                    size="lg"
+                    onClick={() => navigate(`/curso/${course.id}`)}
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Continuar Curso
+                  </Button>
     );
   };
 
