@@ -1,9 +1,11 @@
+import { useNavigate } from "react-router-dom";
 import { Play, Star, Users } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import heroBackground from "@/assets/hero-background.jpg";
 
 const Hero = () => {
+  const navigate = useNavigate();
   return (
     <section 
       id="inicio" 
@@ -28,11 +30,21 @@ const Hero = () => {
             </div>
 
             <div className="flex flex-wrap gap-4">
-              <Button variant="hero" size="lg" className="flex items-center space-x-2 shadow-elegant">
+              <Button 
+                variant="hero" 
+                size="lg" 
+                className="flex items-center space-x-2 shadow-elegant"
+                onClick={() => navigate('/cursos')}
+              >
                 <Play className="h-5 w-5" />
-                <span>Ver Demo Gratuito</span>
+                <span>Comenzar Ahora</span>
               </Button>
-              <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                onClick={() => navigate('#biografia')}
+              >
                 Conoce Mi Historia
               </Button>
             </div>
@@ -68,7 +80,12 @@ const Hero = () => {
                   <div className="aspect-video bg-gradient-accent rounded-lg flex items-center justify-center">
                     <Play className="h-16 w-16 text-white opacity-80" />
                   </div>
-                  <Button variant="hero" className="w-full" size="lg">
+                  <Button 
+                    variant="hero" 
+                    className="w-full" 
+                    size="lg"
+                    onClick={() => navigate('/cursos')}
+                  >
                     Comenzar Ahora Gratis
                   </Button>
                 </div>

@@ -1,9 +1,11 @@
+import { useNavigate } from "react-router-dom";
 import { BookOpen, Clock, Users, Star, CheckCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 
 const Courses = () => {
+  const navigate = useNavigate();
   const courses = [
     {
       id: 1,
@@ -133,14 +135,16 @@ const Courses = () => {
                     variant="hero" 
                     className="w-full shadow-elegant"
                     size="lg"
+                    onClick={() => navigate('/cursos')}
                   >
                     <BookOpen className="h-4 w-4 mr-2" />
-                    Inscribirse Ahora
+                    Ver Cursos
                   </Button>
                   
                   <Button 
                     variant="outline" 
                     className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                    onClick={() => navigate('/cursos')}
                   >
                     Ver Detalles
                   </Button>
@@ -156,8 +160,13 @@ const Courses = () => {
             <p className="mb-6 opacity-90">
               Agenda una consulta gratuita de 15 minutos y te ayudo a encontrar el curso perfecto para tu nivel.
             </p>
-            <Button variant="secondary" size="lg" className="bg-white text-primary hover:bg-white/90">
-              Agendar Consulta Gratuita
+            <Button 
+              variant="secondary" 
+              size="lg" 
+              className="bg-white text-primary hover:bg-white/90"
+              onClick={() => navigate('/cursos')}
+            >
+              Explorar Cursos
             </Button>
           </Card>
         </div>

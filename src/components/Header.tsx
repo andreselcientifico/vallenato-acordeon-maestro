@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Music, User, LogOut } from "lucide-react";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
@@ -6,6 +7,7 @@ import AuthDialog from "./AuthDialog";
 import valenatoLogo from "@/assets/vallenato-logo.jpg";
 
 const Header = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
 
   const handleLogin = (userData: { email: string; name: string }) => {
@@ -59,11 +61,11 @@ const Header = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/perfil')}>
                   <User className="h-4 w-4 mr-2" />
                   Mi Perfil
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/cursos')}>
                   <Music className="h-4 w-4 mr-2" />
                   Mis Cursos
                 </DropdownMenuItem>
