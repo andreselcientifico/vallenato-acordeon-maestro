@@ -69,6 +69,10 @@ const Header = () => {
                   <Music className="h-4 w-4 mr-2" />
                   Mis Cursos
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/admin')}>
+                  <User className="h-4 w-4 mr-2" />
+                  Admin Panel
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Cerrar Sesión
