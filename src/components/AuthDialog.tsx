@@ -1,10 +1,17 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { loginUser, registerUser } from "../api/auth";
 
 interface AuthDialogProps {
   children: React.ReactNode;
@@ -15,55 +22,76 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [registerForm, setRegisterForm] = useState({ 
-    name: "", 
-    email: "", 
-    password: "", 
-    confirmPassword: "" 
+  const [registerForm, setRegisterForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulamos login exitoso
-    onLogin?.({ 
-      email: loginForm.email, 
-      name: loginForm.email.split('@')[0] 
-    });
-    setIsOpen(false);
+    setLoading(true);
+    try {
+      const data = await loginUser(loginForm.email, loginForm.password);
+      console.log("✅ Login exitoso:", data);
+      onLogin?.({
+        email: loginForm.email,
+        name: loginForm.email.split("@")[0],
+      });
+      setIsOpen(false);
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (registerForm.password !== registerForm.confirmPassword) {
       alert("Las contraseñas no coinciden");
       return;
     }
-    // Simulamos registro exitoso
-    onLogin?.({ 
-      email: registerForm.email, 
-      name: registerForm.name 
-    });
-    setIsOpen(false);
+
+    try {
+      const data = await registerUser(
+        registerForm.name,
+        registerForm.email,
+        registerForm.password,
+        registerForm.confirmPassword
+      );
+      console.log("✅ Registro exitoso:", data);
+
+      onLogin?.({
+        email: registerForm.email,
+        name: registerForm.name,
+      });
+
+      setIsOpen(false);
+    } catch (error: any) {
+      alert(error.message);
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold text-primary">
             Academia Vallenato
           </DialogTitle>
         </DialogHeader>
-        
+
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
             <TabsTrigger value="register">Registrarse</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="login" className="space-y-4">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
@@ -76,12 +104,14 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
                     placeholder="tu@email.com"
                     className="pl-10"
                     value={loginForm.email}
-                    onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+                    onChange={(e) =>
+                      setLoginForm({ ...loginForm, email: e.target.value })
+                    }
                     required
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña</Label>
                 <div className="relative">
@@ -92,7 +122,9 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
                     placeholder="••••••••"
                     className="pl-10 pr-10"
                     value={loginForm.password}
-                    onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                    onChange={(e) =>
+                      setLoginForm({ ...loginForm, password: e.target.value })
+                    }
                     required
                   />
                   <Button
@@ -111,18 +143,26 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" variant="hero">
-                Iniciar Sesión
+              <Button
+                type="submit"
+                className="w-full"
+                variant="hero"
+                disabled={loading}
+              >
+                {loading ? "Iniciando..." : "Iniciar Sesión"}
               </Button>
-              
+
               <div className="text-center">
-                <Button variant="link" className="text-sm text-muted-foreground">
+                <Button
+                  variant="link"
+                  className="text-sm text-muted-foreground"
+                >
                   ¿Olvidaste tu contraseña?
                 </Button>
               </div>
             </form>
           </TabsContent>
-          
+
           <TabsContent value="register" className="space-y-4">
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
@@ -135,12 +175,14 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
                     placeholder="Tu nombre completo"
                     className="pl-10"
                     value={registerForm.name}
-                    onChange={(e) => setRegisterForm({...registerForm, name: e.target.value})}
+                    onChange={(e) =>
+                      setRegisterForm({ ...registerForm, name: e.target.value })
+                    }
                     required
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="register-email">Email</Label>
                 <div className="relative">
@@ -151,12 +193,17 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
                     placeholder="tu@email.com"
                     className="pl-10"
                     value={registerForm.email}
-                    onChange={(e) => setRegisterForm({...registerForm, email: e.target.value})}
+                    onChange={(e) =>
+                      setRegisterForm({
+                        ...registerForm,
+                        email: e.target.value,
+                      })
+                    }
                     required
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="register-password">Contraseña</Label>
                 <div className="relative">
@@ -167,7 +214,12 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
                     placeholder="••••••••"
                     className="pl-10 pr-10"
                     value={registerForm.password}
-                    onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})}
+                    onChange={(e) =>
+                      setRegisterForm({
+                        ...registerForm,
+                        password: e.target.value,
+                      })
+                    }
                     required
                   />
                   <Button
@@ -185,7 +237,7 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirmar contraseña</Label>
                 <div className="relative">
@@ -196,7 +248,12 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
                     placeholder="••••••••"
                     className="pl-10"
                     value={registerForm.confirmPassword}
-                    onChange={(e) => setRegisterForm({...registerForm, confirmPassword: e.target.value})}
+                    onChange={(e) =>
+                      setRegisterForm({
+                        ...registerForm,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                     required
                   />
                 </div>
@@ -205,7 +262,7 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
               <Button type="submit" className="w-full" variant="hero">
                 Crear Cuenta
               </Button>
-              
+
               <p className="text-xs text-muted-foreground text-center">
                 Al registrarte, aceptas nuestros términos y condiciones
               </p>

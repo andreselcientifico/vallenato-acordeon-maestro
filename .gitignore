@@ -1,3 +1,10 @@
+#.pem
+*.pem
+
+#env
+.env
+.env.development
+
 # Logs
 logs
 *.log
