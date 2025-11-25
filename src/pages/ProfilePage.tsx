@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  Edit3, 
-  Save, 
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Edit3,
+  Save,
   X,
   Camera,
   Trophy,
@@ -18,7 +18,7 @@ import {
   Shield,
   LogOut,
   Play,
-  CheckCircle
+  CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -31,75 +31,71 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import { getUserProfile, updateUserProfile } from "@/api/user";
+import { API_URL } from "@/config/api";
 
 const ProfilePage = () => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [notifications, setNotifications] = useState({
+    emailNotifications: false,
+    pushNotifications: false,
+    courseReminders: false,
+    newContent: false,
+  });
+  const [coursesData, setCoursesData] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<any[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const [isEditing, setIsEditing] = useState(false);
-  const [userInfo, setUserInfo] = useState({
-    name: "Carlos Mendoza",
-    email: "carlos.mendoza@email.com",
-    phone: "+57 300 123 4567",
-    location: "Valledupar, Cesar",
-    bio: "Apasionado por el vallenato desde pequeño. Mi sueño es tocar como los grandes maestros del acordeón.",
-    birthDate: "1985-03-15",
-    joinDate: "2024-01-15"
-  });
 
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    pushNotifications: false,
-    courseReminders: true,
-    newContent: true
-  });
-
-  const coursesData = [
-    {
-      id: 1,
-      title: "Fundamentos del Acordeón",
-      progress: 75,
-      totalLessons: 24,
-      completedLessons: 18,
-      lastAccessed: "hace 2 días",
-      status: "en-progreso",
-      type: "basic"
-    },
-    {
-      id: 2,
-      title: "Vallenato Clásico",
-      progress: 25,
-      totalLessons: 36,
-      completedLessons: 9,
-      lastAccessed: "hace 1 semana",
-      status: "en-progreso",
-      type: "premium"
-    },
-    {
-      id: 3,
-      title: "Introducción al Vallenato",
-      progress: 100,
-      totalLessons: 12,
-      completedLessons: 12,
-      lastAccessed: "hace 1 mes",
-      status: "completado",
-      type: "basic"
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const res = await getUserProfile();
+        setUserInfo(res.data.user);
+        setCoursesData(res.data.courses || []);
+        setAchievements(res.data.achievements || []);
+        setNotifications({
+          emailNotifications: res.data.user.email_notifications ?? true,
+          pushNotifications: res.data.user.push_notifications ?? false,
+          courseReminders: res.data.user.course_reminders ?? true,
+          newContent: res.data.user.new_content ?? true,
+        });
+      } catch (err) {
+        toast({
+          title: "Sesión no válida",
+          description: "Por favor inicia sesión nuevamente.",
+          variant: "destructive",
+        });
+        navigate("/login");
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
 
-  const achievements = [
-    { name: "Primer Curso Completado", icon: "🏆", earned: true },
-    { name: "Semana Completa", icon: "🔥", earned: true },
-    { name: "Estudiante Dedicado", icon: "⭐", earned: false },
-    { name: "Maestro en Progreso", icon: "🎵", earned: false }
-  ];
+    fetchUser();
+  }, [navigate, toast]);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    toast({
-      title: "Perfil actualizado",
-      description: "Tus cambios han sido guardados exitosamente.",
-    });
+  const handleSave = async () => {
+    try {
+      const res = await updateUserProfile(userInfo);
+
+      if (!res.ok) throw new Error("Error al actualizar perfil");
+
+      toast({
+        title: "Perfil actualizado",
+        description: "Tus cambios han sido guardados exitosamente.",
+      });
+
+      setIsEditing(false);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar tu perfil.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCancel = () => {
@@ -108,35 +104,49 @@ const ProfilePage = () => {
   };
 
   const handleNotificationChange = (key: string, value: boolean) => {
-    setNotifications(prev => ({
+    setNotifications((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   };
 
   const getStatusBadge = (status: string) => {
-    if (status === 'completado') {
-      return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Completado</Badge>;
+    if (status === "completado") {
+      return (
+        <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+          Completado
+        </Badge>
+      );
     }
     return <Badge variant="secondary">En Progreso</Badge>;
   };
 
   const getTypeBadge = (type: string) => {
-    if (type === 'premium') {
-      return <Badge className="bg-gradient-accent text-white">⭐ Premium</Badge>;
+    if (type === "premium") {
+      return (
+        <Badge className="bg-gradient-accent text-white">⭐ Premium</Badge>
+      );
     }
     return <Badge variant="outline">🆓 Básico</Badge>;
   };
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen gap-3 text-center">
+        <div className="animate-spin h-10 w-10 border-4 border-t-transparent border-primary rounded-full"></div>
+        <p className="text-lg text-muted-foreground">Cargando perfil...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        
         {/* Header Navigation */}
         <div className="mb-8">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/')}
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
             className="text-muted-foreground hover:text-primary mb-4"
           >
             ← Volver al Inicio
@@ -149,7 +159,12 @@ const ProfilePage = () => {
             <div className="flex items-start space-x-6">
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-accent rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                  {userInfo.name.split(' ').map(n => n[0]).join('')}
+                  {userInfo?.name
+                    ? userInfo.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                    : "U"}
                 </div>
                 <Button
                   size="sm"
@@ -159,22 +174,30 @@ const ProfilePage = () => {
                   <Camera className="h-4 w-4" />
                 </Button>
               </div>
-              
+
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h1 className="text-3xl font-bold text-primary">{userInfo.name}</h1>
-                    <p className="text-muted-foreground">Estudiante de Acordeón</p>
+                    <h1 className="text-3xl font-bold text-primary">
+                      {userInfo?.name}
+                    </h1>
+                    <p className="text-muted-foreground">
+                      Estudiante de Acordeón
+                    </p>
                   </div>
                   <Button
                     variant={isEditing ? "outline" : "default"}
                     onClick={() => setIsEditing(!isEditing)}
                   >
-                    {isEditing ? <X className="h-4 w-4 mr-2" /> : <Edit3 className="h-4 w-4 mr-2" />}
+                    {isEditing ? (
+                      <X className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Edit3 className="h-4 w-4 mr-2" />
+                    )}
                     {isEditing ? "Cancelar" : "Editar Perfil"}
                   </Button>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -209,31 +232,43 @@ const ProfilePage = () => {
                   <BookOpen className="h-5 w-5 mr-2" />
                   Mis Cursos ({coursesData.length})
                 </h2>
-                
+
                 <div className="space-y-4">
                   {coursesData.map((course) => (
-                    <Card key={course.id} className="p-6 hover:shadow-elegant transition-all">
+                    <Card
+                      key={course.id}
+                      className="p-6 hover:shadow-elegant transition-all"
+                    >
                       <div className="flex items-center justify-between mb-4">
                         <div>
-                          <h3 className="text-lg font-semibold text-primary">{course.title}</h3>
+                          <h3 className="text-lg font-semibold text-primary">
+                            {course.name}
+                          </h3>
                           <div className="flex items-center space-x-4 mt-2">
                             {getStatusBadge(course.status)}
                             {getTypeBadge(course.type)}
                           </div>
                         </div>
-                        <Button 
+                        <Button
                           variant="outline"
                           onClick={() => navigate(`/curso/${course.id}`)}
                         >
                           <Play className="h-4 w-4 mr-2" />
-                          {course.status === 'completado' ? 'Revisar' : 'Continuar'}
+                          {course.status === "completado"
+                            ? "Revisar"
+                            : "Continuar"}
                         </Button>
                       </div>
-                      
+
                       <div className="space-y-3">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Progreso</span>
-                          <span className="font-medium">{course.completedLessons}/{course.totalLessons} lecciones</span>
+                          <span className="text-muted-foreground">
+                            Progreso
+                          </span>
+                          <span className="font-medium">
+                            {course.completedLessons}/{course.totalLessons}{" "}
+                            lecciones
+                          </span>
                         </div>
                         <Progress value={course.progress} className="h-2" />
                         <div className="flex justify-between text-sm text-muted-foreground">
@@ -244,11 +279,11 @@ const ProfilePage = () => {
                     </Card>
                   ))}
                 </div>
-                
+
                 <div className="mt-6 text-center">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/cursos')}
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/cursos")}
                     className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                   >
                     Explorar Más Cursos
@@ -264,15 +299,17 @@ const ProfilePage = () => {
                   <User className="h-5 w-5 mr-2" />
                   Información Personal
                 </h2>
-                
+
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="name">Nombre completo</Label>
                       <Input
                         id="name"
-                        value={userInfo.name}
-                        onChange={(e) => setUserInfo({...userInfo, name: e.target.value})}
+                        value={userInfo?.name}
+                        onChange={(e) =>
+                          setUserInfo({ ...userInfo, name: e.target.value })
+                        }
                         disabled={!isEditing}
                       />
                     </div>
@@ -281,20 +318,24 @@ const ProfilePage = () => {
                       <Input
                         id="email"
                         type="email"
-                        value={userInfo.email}
-                        onChange={(e) => setUserInfo({...userInfo, email: e.target.value})}
+                        value={userInfo.email || ""}
+                        onChange={(e) =>
+                          setUserInfo({ ...userInfo, email: e.target.value })
+                        }
                         disabled={!isEditing}
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="phone">Teléfono</Label>
                       <Input
                         id="phone"
                         value={userInfo.phone}
-                        onChange={(e) => setUserInfo({...userInfo, phone: e.target.value})}
+                        onChange={(e) =>
+                          setUserInfo({ ...userInfo, phone: e.target.value })
+                        }
                         disabled={!isEditing}
                       />
                     </div>
@@ -303,23 +344,27 @@ const ProfilePage = () => {
                       <Input
                         id="location"
                         value={userInfo.location}
-                        onChange={(e) => setUserInfo({...userInfo, location: e.target.value})}
+                        onChange={(e) =>
+                          setUserInfo({ ...userInfo, location: e.target.value })
+                        }
                         disabled={!isEditing}
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="bio">Biografía</Label>
                     <Textarea
                       id="bio"
                       value={userInfo.bio}
-                      onChange={(e) => setUserInfo({...userInfo, bio: e.target.value})}
+                      onChange={(e) =>
+                        setUserInfo({ ...userInfo, bio: e.target.value })
+                      }
                       disabled={!isEditing}
                       rows={4}
                     />
                   </div>
-                  
+
                   {isEditing && (
                     <div className="flex space-x-4">
                       <Button onClick={handleSave}>
@@ -342,15 +387,15 @@ const ProfilePage = () => {
                   <Trophy className="h-5 w-5 mr-2" />
                   Logros y Reconocimientos
                 </h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {achievements.map((achievement, index) => (
-                    <Card 
-                      key={index} 
+                    <Card
+                      key={index}
                       className={`p-4 transition-all ${
-                        achievement.earned 
-                          ? 'bg-gradient-card border-primary/20' 
-                          : 'bg-muted/50 border-muted opacity-60'
+                        achievement.earned
+                          ? "bg-gradient-card border-primary/20"
+                          : "bg-muted/50 border-muted opacity-60"
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -358,7 +403,7 @@ const ProfilePage = () => {
                         <div>
                           <h3 className="font-medium">{achievement.name}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {achievement.earned ? 'Obtenido' : 'Bloqueado'}
+                            {achievement.earned ? "Obtenido" : "Bloqueado"}
                           </p>
                         </div>
                         {achievement.earned && (
@@ -378,7 +423,7 @@ const ProfilePage = () => {
                   <Settings className="h-5 w-5 mr-2" />
                   Configuración de la Cuenta
                 </h2>
-                
+
                 <div className="space-y-6">
                   {/* Notificaciones */}
                   <div>
@@ -389,39 +434,56 @@ const ProfilePage = () => {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium">Notificaciones por email</p>
-                          <p className="text-sm text-muted-foreground">Recibir actualizaciones por correo</p>
+                          <p className="font-medium">
+                            Notificaciones por email
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Recibir actualizaciones por correo
+                          </p>
                         </div>
                         <Switch
                           checked={notifications.emailNotifications}
-                          onCheckedChange={(value) => handleNotificationChange('emailNotifications', value)}
+                          onCheckedChange={(value) =>
+                            handleNotificationChange(
+                              "emailNotifications",
+                              value
+                            )
+                          }
                         />
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">Recordatorios de cursos</p>
-                          <p className="text-sm text-muted-foreground">Recordatorios para continuar estudiando</p>
+                          <p className="text-sm text-muted-foreground">
+                            Recordatorios para continuar estudiando
+                          </p>
                         </div>
                         <Switch
                           checked={notifications.courseReminders}
-                          onCheckedChange={(value) => handleNotificationChange('courseReminders', value)}
+                          onCheckedChange={(value) =>
+                            handleNotificationChange("courseReminders", value)
+                          }
                         />
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">Nuevo contenido</p>
-                          <p className="text-sm text-muted-foreground">Notificar sobre nuevos cursos y lecciones</p>
+                          <p className="text-sm text-muted-foreground">
+                            Notificar sobre nuevos cursos y lecciones
+                          </p>
                         </div>
                         <Switch
                           checked={notifications.newContent}
-                          onCheckedChange={(value) => handleNotificationChange('newContent', value)}
+                          onCheckedChange={(value) =>
+                            handleNotificationChange("newContent", value)
+                          }
                         />
                       </div>
                     </div>
                   </div>
-                  
+
                   <Separator />
-                  
+
                   {/* Seguridad */}
                   <div>
                     <h3 className="text-lg font-medium mb-4 flex items-center">
@@ -429,17 +491,23 @@ const ProfilePage = () => {
                       Seguridad
                     </h3>
                     <div className="space-y-4">
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                      >
                         Cambiar Contraseña
                       </Button>
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                      >
                         Autenticación de Dos Factores
                       </Button>
                     </div>
                   </div>
-                  
+
                   <Separator />
-                  
+
                   {/* Zona Peligrosa */}
                   <div>
                     <h3 className="text-lg font-medium mb-4 text-destructive">
@@ -450,7 +518,10 @@ const ProfilePage = () => {
                         <LogOut className="h-4 w-4 mr-2" />
                         Cerrar Sesión
                       </Button>
-                      <Button variant="outline" className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground">
+                      <Button
+                        variant="outline"
+                        className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      >
                         Eliminar Cuenta
                       </Button>
                     </div>

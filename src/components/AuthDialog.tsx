@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -35,7 +36,6 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
     setLoading(true);
     try {
       const data = await loginUser(loginForm.email, loginForm.password);
-      console.log("✅ Login exitoso:", data);
       onLogin?.({
         email: loginForm.email,
         name: loginForm.email.split("@")[0],
@@ -63,8 +63,6 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
         registerForm.password,
         registerForm.confirmPassword
       );
-      console.log("✅ Registro exitoso:", data);
-
       onLogin?.({
         email: registerForm.email,
         name: registerForm.name,
@@ -84,6 +82,9 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
           <DialogTitle className="text-center text-2xl font-bold text-primary">
             Academia Vallenato
           </DialogTitle>
+          <DialogDescription className="text-center mb-4 text-muted-foreground">
+            Inicia sesión o crea una cuenta.
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="login" className="w-full">

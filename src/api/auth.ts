@@ -17,14 +17,31 @@ export async function loginUser(email: string, password: string) {
 }
 
 export async function getCurrentUser() {
-  const res = await fetch(`${API_URL}/users/me`, {
-    method: "GET",
-    credentials: "include", // 👈 Envía la cookie al backend
-  });
+  try {
+    const res = await fetch(`${API_URL}/users/me`, {
+      method: "GET",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
 
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data?.data?.user || null;
+    // Si la respuesta no es OK → usuario no autenticado
+    if (!res.ok) return null;
+
+    // Intentar parsear JSON (si falla → null)
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      return null;
+    }
+
+    // Devolver usuario si existe, sino null
+    return data?.data?.user ?? null;
+
+  } catch {
+    // Error de conexión, CORS, timeout, etc.
+    return null;
+  }
 }
 
 export async function registerUser(name: string, email: string, password: string, confirmPassword: string) {
@@ -40,5 +57,6 @@ export async function registerUser(name: string, email: string, password: string
     throw new Error(err.message || "Error al registrarse");
   }
 
-  return await res.json();
+  const data = await res.json();
+  return data?.data?.user ||  null;
 }

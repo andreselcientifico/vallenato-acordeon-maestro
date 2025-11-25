@@ -8,14 +8,16 @@ import fs from 'fs'
 export default defineConfig(({ mode }) => ({
   server: {
     // https: {
-    //   key: fs.readFileSync('./key.pem'),
-    //   cert: fs.readFileSync('./cert.pem'),
+    //   key: fs.readFileSync(path.resolve(__dirname, "../certificados/localhost-key.pem")),
+    //   cert: fs.readFileSync(path.resolve(__dirname, "../certificados/localhost.pem")),
     // },
     host: "::",
     port: 8080,
-    // allowedHosts: [
-    //   'f91498e6b1d3.ngrok-free.app',
-    // ]
+    hmr: false,
+    allowedHosts: [
+      'oaks-trance-contributions-tracking.trycloudflare.com',
+      'accordingly-locked-warranties-talked.trycloudflare.com'
+    ],
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

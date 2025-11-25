@@ -1,6 +1,6 @@
 import { Music, Mail, Phone, MapPin, Instagram, Youtube, Facebook } from "lucide-react";
 import { Button } from "./ui/button";
-import valenatoLogo from "@/assets/vallenato-logo.png";
+import valenatoLogo from "@/assets/vallenato-logo.webp";
 
 const Footer = () => {
   return (

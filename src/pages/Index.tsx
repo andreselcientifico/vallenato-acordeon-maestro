@@ -1,4 +1,4 @@
-import Header from "@/components/Header";
+import LazyHeader from "@/components/LazyHeader";
 import Hero from "@/components/Hero";
 import Biography from "@/components/Biography";
 import VideoCarousel from "@/components/VideoCarousel";
@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 const Index = () => {
   return (
     <div className="min-h-screen">
-      <Header />
+      <LazyHeader />
       <Hero />
       <Biography />
       <VideoCarousel />

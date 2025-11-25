@@ -1,8 +1,25 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+/**
+ * Contexto de autenticación global.
+ * - Obtiene el usuario desde el backend al iniciar la app.
+ * - Si ocurre un error (CORS, cookie inválida, network error), se considera user = null.
+ * - Provee login/logout y estado de carga.
+ */
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { getCurrentUser } from "@/api/auth";
 import { API_URL } from "@/config/api";
 
-type User = { name: string; email: string } | null;
+type User = {
+  name: string;
+  email: string;
+  role?: string;
+  verified?: boolean;
+} | null;
 
 type AuthContextType = {
   user: User;
@@ -17,24 +34,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Solo pedimos al backend el estado de sesión una vez al cargar la app
+  /**
+   * Al cargar la app, consulta /users/me.
+   * Maneja errores para evitar crasheos si hay CORS, token inválido, etc.
+   */
   useEffect(() => {
-    getCurrentUser()
-      .then((data) => {
-        if (data) setUser(data);
-      })
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const data = await getCurrentUser();
+        setUser(data); // data ya es null si falló
+      } catch (err) {
+        setUser(null); // ante cualquier error, no hay usuario
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const login = (userData: User) => {
-    setUser(userData);
+  const login = async () => {
+    try {
+      const me = await getCurrentUser();
+      setUser(me);
+    } catch {
+      setUser(null);
+    }
   };
 
   const logout = async () => {
-    await fetch(`${API_URL}/logout`, {
-      method: "POST",
-      credentials: "include",
-    }).catch(() => {});
+    try {
+      await fetch(`${API_URL}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      /* El backend puede fallar, pero igual limpiamos sesión local */
+    }
     setUser(null);
   };
 
