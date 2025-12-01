@@ -1,9 +1,9 @@
 import { API_URL } from "@/config/api";
 
-export async function saveCourseAPI(course) {
-  const method = course.id ? "PUT" : "POST";
-  const url = course.id
-    ? `${API_URL}/courses/${course.id}`
+export async function saveCourseAPI(course, courseId: string | undefined) {
+  const method = courseId ? "PUT" : "POST";
+  const url = courseId
+    ? `${API_URL}/courses/${courseId}`
     : `${API_URL}/courses`;
 
   const res = await fetch(url, {
@@ -36,4 +36,22 @@ export async function fetchCoursesAPI() {
   }
 
   return res.json();  // Esto debe devolver un array de Course
+}
+
+export async function deleteCourseAPI(courseId) {
+  const res = await fetch(`${API_URL}/courses/${courseId}`, {
+    method: "DELETE",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Error al eliminar el curso");
+  }
+
+  // 👇 Manejar 204 No Content
+  if (res.status === 204) return { deleted: true };
+
+  return res.json();
 }

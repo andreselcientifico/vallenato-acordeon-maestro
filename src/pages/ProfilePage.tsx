@@ -141,9 +141,9 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
         {/* Header Navigation */}
-        <div className="mb-8">
+        <div className="mb-4 sm:mb-8">
           <Button
             variant="ghost"
             onClick={() => navigate("/")}
@@ -155,10 +155,10 @@ const ProfilePage = () => {
 
         <div className="max-w-6xl mx-auto">
           {/* Profile Header */}
-          <Card className="p-8 mb-8">
-            <div className="flex items-start space-x-6">
+          <Card className="p-4 sm:p-8 mb-4 sm:mb-8">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
               <div className="relative">
-                <div className="w-24 h-24 bg-gradient-accent rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-accent rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold">
                   {userInfo?.name
                     ? userInfo.name
                         .split(" ")
@@ -175,10 +175,10 @@ const ProfilePage = () => {
                 </Button>
               </div>
 
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-4">
+              <div className="flex-1 text-center sm:text-left w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
                   <div>
-                    <h1 className="text-3xl font-bold text-primary">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-primary">
                       {userInfo?.name}
                     </h1>
                     <p className="text-muted-foreground">
@@ -188,6 +188,7 @@ const ProfilePage = () => {
                   <Button
                     variant={isEditing ? "outline" : "default"}
                     onClick={() => setIsEditing(!isEditing)}
+                    className="w-full sm:w-auto"
                   >
                     {isEditing ? (
                       <X className="h-4 w-4 mr-2" />
@@ -198,16 +199,16 @@ const ProfilePage = () => {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div className="flex items-center space-x-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm">
+                  <div className="flex items-center justify-center sm:justify-start space-x-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span>Miembro desde enero 2024</span>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center sm:justify-start space-x-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span>{userInfo.location}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center sm:justify-start space-x-2">
                     <Trophy className="h-4 w-4 text-muted-foreground" />
                     <span>2 logros obtenidos</span>
                   </div>
@@ -217,18 +218,18 @@ const ProfilePage = () => {
           </Card>
 
           {/* Tabs Content */}
-          <Tabs defaultValue="courses" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="courses">Mis Cursos</TabsTrigger>
-              <TabsTrigger value="profile">Información</TabsTrigger>
-              <TabsTrigger value="achievements">Logros</TabsTrigger>
-              <TabsTrigger value="settings">Configuración</TabsTrigger>
+          <Tabs defaultValue="courses" className="space-y-4 sm:space-y-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+              <TabsTrigger value="courses" className="text-xs sm:text-sm px-2 py-2">Mis Cursos</TabsTrigger>
+              <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 py-2">Información</TabsTrigger>
+              <TabsTrigger value="achievements" className="text-xs sm:text-sm px-2 py-2">Logros</TabsTrigger>
+              <TabsTrigger value="settings" className="text-xs sm:text-sm px-2 py-2">Configuración</TabsTrigger>
             </TabsList>
 
             {/* Mis Cursos */}
-            <TabsContent value="courses" className="space-y-6">
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-6 flex items-center">
+            <TabsContent value="courses" className="space-y-4 sm:space-y-6">
+              <Card className="p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 flex items-center">
                   <BookOpen className="h-5 w-5 mr-2" />
                   Mis Cursos ({coursesData.length})
                 </h2>
@@ -237,14 +238,14 @@ const ProfilePage = () => {
                   {coursesData.map((course) => (
                     <Card
                       key={course.id}
-                      className="p-6 hover:shadow-elegant transition-all"
+                      className="p-4 sm:p-6 hover:shadow-elegant transition-all"
                     >
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-primary">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
+                        <div className="flex-1">
+                          <h3 className="text-base sm:text-lg font-semibold text-primary">
                             {course.name}
                           </h3>
-                          <div className="flex items-center space-x-4 mt-2">
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
                             {getStatusBadge(course.status)}
                             {getTypeBadge(course.type)}
                           </div>
@@ -252,6 +253,7 @@ const ProfilePage = () => {
                         <Button
                           variant="outline"
                           onClick={() => navigate(`/curso/${course.id}`)}
+                          className="w-full sm:w-auto"
                         >
                           <Play className="h-4 w-4 mr-2" />
                           {course.status === "completado"
@@ -293,15 +295,15 @@ const ProfilePage = () => {
             </TabsContent>
 
             {/* Información Personal */}
-            <TabsContent value="profile" className="space-y-6">
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-6 flex items-center">
+            <TabsContent value="profile" className="space-y-4 sm:space-y-6">
+              <Card className="p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 flex items-center">
                   <User className="h-5 w-5 mr-2" />
                   Información Personal
                 </h2>
 
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4 sm:space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="name">Nombre completo</Label>
                       <Input
@@ -327,7 +329,7 @@ const ProfilePage = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="phone">Teléfono</Label>
                       <Input
@@ -366,12 +368,12 @@ const ProfilePage = () => {
                   </div>
 
                   {isEditing && (
-                    <div className="flex space-x-4">
-                      <Button onClick={handleSave}>
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                      <Button onClick={handleSave} className="w-full sm:w-auto">
                         <Save className="h-4 w-4 mr-2" />
                         Guardar Cambios
                       </Button>
-                      <Button variant="outline" onClick={handleCancel}>
+                      <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
                         Cancelar
                       </Button>
                     </div>
@@ -381,14 +383,14 @@ const ProfilePage = () => {
             </TabsContent>
 
             {/* Logros */}
-            <TabsContent value="achievements" className="space-y-6">
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-6 flex items-center">
+            <TabsContent value="achievements" className="space-y-4 sm:space-y-6">
+              <Card className="p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 flex items-center">
                   <Trophy className="h-5 w-5 mr-2" />
                   Logros y Reconocimientos
                 </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {achievements.map((achievement, index) => (
                     <Card
                       key={index}
@@ -417,14 +419,14 @@ const ProfilePage = () => {
             </TabsContent>
 
             {/* Configuración */}
-            <TabsContent value="settings" className="space-y-6">
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-6 flex items-center">
+            <TabsContent value="settings" className="space-y-4 sm:space-y-6">
+              <Card className="p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 flex items-center">
                   <Settings className="h-5 w-5 mr-2" />
                   Configuración de la Cuenta
                 </h2>
 
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Notificaciones */}
                   <div>
                     <h3 className="text-lg font-medium mb-4 flex items-center">
@@ -432,8 +434,8 @@ const ProfilePage = () => {
                       Notificaciones
                     </h3>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                        <div className="flex-1">
                           <p className="font-medium">
                             Notificaciones por email
                           </p>
@@ -451,8 +453,8 @@ const ProfilePage = () => {
                           }
                         />
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                        <div className="flex-1">
                           <p className="font-medium">Recordatorios de cursos</p>
                           <p className="text-sm text-muted-foreground">
                             Recordatorios para continuar estudiando
@@ -465,8 +467,8 @@ const ProfilePage = () => {
                           }
                         />
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                        <div className="flex-1">
                           <p className="font-medium">Nuevo contenido</p>
                           <p className="text-sm text-muted-foreground">
                             Notificar sobre nuevos cursos y lecciones

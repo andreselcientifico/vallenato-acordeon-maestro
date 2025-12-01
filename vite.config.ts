@@ -14,10 +14,12 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     hmr: false,
-    allowedHosts: [
-      'oaks-trance-contributions-tracking.trycloudflare.com',
-      'accordingly-locked-warranties-talked.trycloudflare.com'
-    ],
+    allowedHosts: true
+  },
+  preview: {
+    // allowedHosts permite que el servidor de preview acepte solicitudes desde ciertos hosts externos.
+    // Esto es necesario cuando usas Cloudflare Tunnel, Ngrok, LocalTunnel, etc.
+    allowedHosts: true
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
