@@ -21,12 +21,20 @@ export async function updateUserProfile(profileData) {
         body: JSON.stringify(profileData),
       });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Error al actualizar el perfil");
+  const text = await res.text();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (e) {
+    throw new Error("Error parseando JSON: " + e.message);
   }
 
-  return res.json();
+  if (!res.ok) {
+    throw new Error(parsed.message || `HTTP error ${res.status}`);
+  }
+
+  return parsed;
 }
 
 export async function deleteUserAccount() {

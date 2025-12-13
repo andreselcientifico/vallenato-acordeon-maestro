@@ -54,7 +54,7 @@ export default function AdminRoute({ children }) {
   // 🚪 NO LOGUEADO
   // ===============================
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/Not Found" replace />;
   }
 
   // ===============================

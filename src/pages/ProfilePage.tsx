@@ -32,10 +32,11 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { getUserProfile, updateUserProfile } from "@/api/user";
-import { API_URL } from "@/config/api";
+import { useAuth } from "@/context/AuthContext";
 
 const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const { logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<any>(null);
   const [notifications, setNotifications] = useState({
@@ -79,10 +80,7 @@ const ProfilePage = () => {
 
   const handleSave = async () => {
     try {
-      const res = await updateUserProfile(userInfo);
-
-      if (!res.ok) throw new Error("Error al actualizar perfil");
-
+      const _ = await updateUserProfile(userInfo);
       toast({
         title: "Perfil actualizado",
         description: "Tus cambios han sido guardados exitosamente.",
@@ -149,7 +147,7 @@ const ProfilePage = () => {
             onClick={() => navigate("/")}
             className="text-muted-foreground hover:text-primary mb-4"
           >
-            ← Volver al Inicio
+            ← Volver
           </Button>
         </div>
 
@@ -516,7 +514,7 @@ const ProfilePage = () => {
                       Zona Peligrosa
                     </h3>
                     <div className="space-y-4">
-                      <Button variant="destructive" className="w-full">
+                      <Button onClick={logout} variant="destructive" className="w-full">
                         <LogOut className="h-4 w-4 mr-2" />
                         Cerrar Sesión
                       </Button>

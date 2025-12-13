@@ -135,7 +135,7 @@ const Header = () => {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <AuthDialog onLogin={login}>
+          <AuthDialog onLogin={(u) => { login(u)}}>
             <Button variant="hero" size="lg" className="flex items-center space-x-2">
               <User className="h-4 w-4" />
               <span>Iniciar Sesión</span>

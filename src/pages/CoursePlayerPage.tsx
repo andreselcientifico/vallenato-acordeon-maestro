@@ -148,7 +148,7 @@ const LessonContentRenderer: React.FC<LessonContentRendererProps> = ({
 
   useEffect(() => {
     if (lesson && lesson.type === "video") {
-      console.log("Video URL: ", lesson.content_url);
+      setIsPlaying(false);
     }
   }, [lesson]);
 
@@ -160,7 +160,7 @@ const LessonContentRenderer: React.FC<LessonContentRendererProps> = ({
       <p className="text-lg text-muted-foreground max-w-2xl">{description}</p>
       
       {/* Botón de acción para el contenido */}
-      <Button size="lg" onClick={() => console.log(`Iniciar ${title}`)}>
+      <Button size="lg" onClick={() => lesson.content_url && window.open(lesson.content_url, '_blank')}>
         {lesson.type === 'quiz' ? 'Iniciar Cuestionario' : 'Ver Ejercicio'}
       </Button>
 
@@ -228,7 +228,6 @@ const CoursePlayerPage = () => {
       })
       .catch((err) => {
         // Manejo de errores (similar a tu código original)
-        console.error(err);
         const errorMessage = err.message || "Error desconocido al obtener el curso.";
         if (errorMessage.includes("Permission denied") || errorMessage.includes("403")) {
           toast({ title: "Acceso denegado", description: "No tienes permiso para ver este curso." });

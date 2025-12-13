@@ -19,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, ArrowLeft, Save, Eye, GripVertical, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { saveCourseAPI, fetchCoursesAPI, deleteCourseAPI } from "@/api/admin";
+import CoursesPage from "./CoursesPage";
+import { normalize } from "path";
 
 // ----------------------------------------------------------------------
 // INTERFACES (Adaptadas al Backend Rust)
@@ -131,16 +133,8 @@ const AdminPage = () => {
       return courseDate >= from && courseDate <= to;
     });
 
-  // ----------------------------------------------------------------------
-  // LOAD COURSES FROM DB FUNCTION
-  // ----------------------------------------------------------------------
-  const loadCoursesFromDB = async () => {
-    try {
-      // Se asume que fetchCoursesAPI llama a /api/courses/with-videos (get_courses_with_videos)
-      // y devuelve Vec<CourseWithModulesDto>
-      const data = await fetchCoursesAPI();
-
-      const normalized: Course[] = data.map((item: any) => ({
+  const Normalized = async (data) => {
+    const normalized: Course[] = data.map((item: any) => ({
         id: item.id,
         title: item.title,
         description: item.description,
@@ -171,18 +165,58 @@ const AdminPage = () => {
             order: l.order
           }))
         }))
-      }));
-
-      // Ordenar por fecha (último creado primero)
-      normalized.sort((a, b) => {
+      })).sort((a, b) => {
         const dateA = new Date(a.created_at).getTime();
         const dateB = new Date(b.created_at).getTime();
         return dateB - dateA;
       });
 
-      setCourses(normalized);
+      return normalized;
+  }
+
+  const Payload = async (data) => {
+    return {
+        //id: currentCourse.id || undefined, // undefined para creación
+        title: data.title,
+        description: data.description,
+        long_description: data.longDescription, // snake_case OK
+        level: data.level,
+        price: data.price,
+        duration: data.duration,
+        students: data.students|| undefined,
+        rating: data.rating|| undefined,
+        image: data.image,
+        category: data.category,
+        features: data.features,
+        
+        // Mapeo de Módulos -> UpdateModuleDTO / CreateModuleDTO
+        modules: data.modules.map(m => ({
+          id: m.id ? m.id : undefined, // undefined si es nuevo
+          title: m.title,
+          order: m.order,
+          lessons: m.lessons.map(l => ({
+            id: l.id ? l.id : undefined, // undefined si es nueva
+            title: l.title,
+            duration: l.duration,
+            completed: l.completed ?? false,
+            type: l.type,        // video | exercise | quiz
+            content_url: l.content_url,
+            description: l.description,
+            order: l.order
+          }))
+        }))
+      };
+  }
+
+  // ----------------------------------------------------------------------
+  // LOAD COURSES FROM DB FUNCTION
+  // ----------------------------------------------------------------------
+  const loadCoursesFromDB = async () => {
+    try {
+      // Se asume que fetchCoursesAPI llama a /api/courses/with-videos (get_courses_with_videos)
+      // y devuelve Vec<CourseWithModulesDto>
+      setCourses(await Normalized(await fetchCoursesAPI()));
     } catch (error) {
-      console.error(error);
       toast({
         title: "Error",
         description: "No se pudieron cargar los cursos",
@@ -301,40 +335,9 @@ const AdminPage = () => {
 
     const isUpdating = !!currentCourse.id; // Verifica si tiene un ID
     const endpointId = currentCourse.id || undefined; // Usa el ID para la URL si existe
-    console.log("Updating course ID:", endpointId);
     try {
       // Construir Payload compatible con Rust DTOs
-      const payload = {
-        //id: currentCourse.id || undefined, // undefined para creación
-        title: currentCourse.title,
-        description: currentCourse.description,
-        long_description: currentCourse.longDescription, // snake_case OK
-        level: currentCourse.level,
-        price: currentCourse.price,
-        duration: currentCourse.duration,
-        students: currentCourse.students|| undefined,
-        rating: currentCourse.rating|| undefined,
-        image: currentCourse.image,
-        category: currentCourse.category,
-        features: currentCourse.features,
-        
-        // Mapeo de Módulos -> UpdateModuleDTO / CreateModuleDTO
-        modules: currentCourse.modules.map(m => ({
-          id: m.id ? m.id : undefined, // undefined si es nuevo
-          title: m.title,
-          order: m.order,
-          lessons: m.lessons.map(l => ({
-            id: l.id ? l.id : undefined, // undefined si es nueva
-            title: l.title,
-            duration: l.duration,
-            completed: l.completed ?? false,
-            type: l.type,        // video | exercise | quiz
-            content_url: l.content_url,
-            description: l.description,
-            order: l.order
-          }))
-        }))
-      };
+      const payload = await Payload(currentCourse)
 
       await saveCourseAPI(payload, endpointId);
 
@@ -343,8 +346,6 @@ const AdminPage = () => {
       toast({ title: "Éxito", description: "Curso guardado correctamente" });
       setActiveTab("manage");
     } catch (error: any) {
-      console.error(error);
-      
       // Manejo específico si es un 500/404 que indica que el curso ya no existe.
       // Si recibes un 500 o 404 y estabas actualizando, resetear el ID es clave.
       if (isUpdating) {
@@ -354,7 +355,7 @@ const AdminPage = () => {
           setCurrentCourse(prev => ({ ...prev, id: "" }));
           toast({
               title: "Error de Sincronización",
-              description: `El curso con ID ${endpointId} no se pudo actualizar. Se ha limpiado el formulario. Por favor, crea uno nuevo o recarga la lista.`,
+              description: `El curso con Title ${currentCourse.title} no se pudo actualizar. Se ha limpiado el formulario. Por favor, crea uno nuevo o recarga la lista.`,
               variant: "destructive",
           });
       } else {
@@ -431,7 +432,7 @@ const AdminPage = () => {
                 className="text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver al Inicio
+                Volver
               </Button>
               <h1 className="text-2xl font-bold text-vallenato-red">
                 Panel de Administración

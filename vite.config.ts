@@ -27,4 +27,16 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+   build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Si el archivo pertenece a una librería externa, lo ponemos en su propio chunk
+          if (id.includes('node_modules')) {
+            return 'vendor'; // Los módulos de node_modules se agruparán en un solo archivo 'vendor.js'
+          }
+        }
+      }
+    }
+  }
 }));

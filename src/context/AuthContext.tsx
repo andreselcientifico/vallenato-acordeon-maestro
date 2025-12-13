@@ -13,6 +13,7 @@ import {
 } from "react";
 import { getCurrentUser } from "@/api/auth";
 import { API_URL } from "@/config/api";
+import { toast } from "sonner";
 
 type User = {
   name: string;
@@ -62,15 +63,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await fetch(`${API_URL}/logout`, {
+      const res = await fetch(`${API_URL}/logout`, {
         method: "POST",
         credentials: "include",
       });
-    } catch {
-      /* El backend puede fallar, pero igual limpiamos sesión local */
+
+      // opcional: revisar status HTTP
+      if (!res.ok) {
+        // puedes parsear un mensaje de error si tu backend lo envía
+        let errorText;
+        try {
+          const errBody = await res.json();
+          errorText = errBody.message || JSON.stringify(errBody);
+        } catch (_) {
+          errorText = `Error HTTP ${res.status}`;
+        }
+        throw new Error(errorText);
+      }
+
+    } catch (error) {
+      // mostrar un mensaje al usuario si quieres
+      toast.error(`Error al cerrar sesión: ${(error as Error).message}`);
+    } finally {
+      // limpiar estado de usuario sin importar qué pasó
+      setUser(null);
+      // redirigir a página principal
+      window.location.href = "/#inicio";
     }
-    setUser(null);
   };
+
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>

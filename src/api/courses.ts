@@ -54,7 +54,6 @@ export async function getCourseDetails(courseId: string): Promise<CourseDetails>
   }
 
   const data = await res.json();
-  console.log("API Response: ", data);
   // Transformar datos del backend a tipos frontend
   return {
     id: data.id,

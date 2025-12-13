@@ -38,6 +38,26 @@ export async function fetchCoursesAPI() {
   return res.json();  // Esto debe devolver un array de Course
 }
 
+export async function fetchCourses_API() {
+  const res = await fetch(`${API_URL}/courses`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Error al cargar cursos");
+  }
+
+  const courses = await res.json();  // Obtener todos los cursos
+
+  // Ordenamos los cursos por rating de mayor a menor
+  return courses.sort((a: { rating: number }, b: { rating: number }) => b.rating - a.rating);
+}
+
 export async function deleteCourseAPI(courseId) {
   const res = await fetch(`${API_URL}/courses/${courseId}`, {
     method: "DELETE",

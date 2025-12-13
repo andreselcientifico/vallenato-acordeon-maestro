@@ -11,7 +11,7 @@ const Index = () => {
       <LazyHeader />
       <Hero />
       <Biography />
-      <VideoCarousel />
+      {/* <VideoCarousel /> */}
       <Courses />
       <Footer />
     </div>
