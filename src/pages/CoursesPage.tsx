@@ -99,7 +99,7 @@ const CoursesPage = () => {
         <div className="mb-8">
           <Button
             variant="ghost"
-            onClick={() => navigate("/")}
+            onClick={() => navigate(-1)}
             className="text-muted-foreground hover:text-primary mb-4"
           >
             ← Volver
@@ -120,32 +120,6 @@ const CoursesPage = () => {
                 Explora nuestros cursos gratuitos y premium de acordeón
                 vallenato
               </p>
-
-              {/* User State Demo Controls */}
-              {/* <div className="flex justify-center gap-4 mb-8 p-4 bg-muted rounded-lg max-w-md mx-auto">
-                <Button 
-                  variant={userState === 'guest' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setUserState('guest')}
-                >
-                  Invitado
-                </Button>
-                <Button 
-                  variant={userState === 'logged-in' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setUserState('logged-in')}
-                >
-                  Usuario Registrado
-                </Button>
-              </div> */}
-
-              {/* {userState !== 'guest' && (
-                <div className="text-center mb-8">
-                  <Badge variant="secondary" className="bg-primary/10 text-primary">
-                    ✓ Sesión iniciada como Usuario Registrado
-                  </Badge>
-                </div>
-              )} */}
             </div>
 
             {/* Courses Grid */}

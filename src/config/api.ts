@@ -1,1 +1,1 @@
-export const API_URL = "https://tape-sit-trend-marion.trycloudflare.com"; // usa https si tu backend lo usa
+export const API_URL = "https://sound-completely-fountain-welding.trycloudflare.com"; // usa https si tu backend lo usa

@@ -144,7 +144,7 @@ const ProfilePage = () => {
         <div className="mb-4 sm:mb-8">
           <Button
             variant="ghost"
-            onClick={() => navigate("/")}
+            onClick={() => navigate(-1)}
             className="text-muted-foreground hover:text-primary mb-4"
           >
             ← Volver

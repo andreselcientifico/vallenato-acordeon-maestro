@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { saveCourseAPI, fetchCoursesAPI, deleteCourseAPI } from "@/api/admin";
 import CoursesPage from "./CoursesPage";
 import { normalize } from "path";
+import * as yup from 'yup';
 
 // ----------------------------------------------------------------------
 // INTERFACES (Adaptadas al Backend Rust)
@@ -61,13 +62,46 @@ interface Course {
   created_at: string;
 }
 
+// Esquema de validación con Yup
+const courseValidationSchema = yup.object().shape({
+  title: yup.string().required('El título del curso es requerido'),
+  description: yup.string().required('La descripción corta es requerida'),
+  longDescription: yup.string(),
+  level: yup.string().required('El nivel es requerido').oneOf(['básico', 'intermedio', 'avanzado'], 'Nivel inválido'),
+  price: yup.number().min(0, 'El precio debe ser mayor a 0').required('El precio es requerido'),
+  duration: yup.string(),
+  students: yup.number(),
+  rating: yup.number(),
+  image: yup.string().url('La URL de la imagen no es válida'),
+  category: yup.string().required('La categoría es requerida').oneOf(['básico', 'premium'], 'Categoría inválida'),
+  features: yup.array().of(yup.string()),
+  modules: yup.array().of(
+    yup.object().shape({
+      title: yup.string().required('El título del módulo es requerido'),
+      order: yup.number().min(1, 'El orden debe ser al menos 1'),
+      lessons: yup.array().of(
+        yup.object().shape({
+          title: yup.string().required('El título de la lección es requerido'),
+          duration: yup.string(),
+          type: yup.string().oneOf(['video', 'exercise', 'quiz'], 'Tipo de lección inválido'),
+          content_url: yup.string().url('La URL del contenido no es válida'),
+          description: yup.string(),
+          order: yup.number().min(1, 'El orden debe ser al menos 1'),
+        })
+      ),
+    })
+  ),
+});
+
 const AdminPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [activeTab, setActiveTab] = useState("manage");
   const [search, setSearch] = useState("");
-  
+  const isValidUrl = (url) =>
+  /^https?:\/\/.+/i.test(url);
+
   // Filtros
   const [filterCategory, setFilterCategory] = useState<"all" | "básico" | "premium">("all");
   const [filterLevel, setFilterLevel] = useState<"all" | "básico" | "intermedio" | "avanzado">("all");
@@ -94,7 +128,7 @@ const AdminPage = () => {
 
   const [newFeature, setNewFeature] = useState("");
   const [editingCourse, setEditingCourse] = useState<string | null>(null);
-  
+
   // Control de acordeón visual para módulos
   const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set([0]));
 
@@ -149,7 +183,7 @@ const AdminPage = () => {
         category: item.category,
         features: Array.isArray(item.features) ? item.features : [],
         created_at: item.created_at,
-        
+
         // Mapeo profundo de Módulos y Lecciones
         modules: (item.modules || []).map((m: any) => ({
           id: m.id,
@@ -188,7 +222,7 @@ const AdminPage = () => {
         image: data.image,
         category: data.category,
         features: data.features,
-        
+
         // Mapeo de Módulos -> UpdateModuleDTO / CreateModuleDTO
         modules: data.modules.map(m => ({
           id: m.id ? m.id : undefined, // undefined si es nuevo
@@ -240,7 +274,7 @@ const AdminPage = () => {
       ...currentCourse,
       modules: [...currentCourse.modules, newModule]
     });
-    
+
     // Expandir automáticamente el nuevo módulo
     const newIndex = currentCourse.modules.length;
     setExpandedModules(new Set(expandedModules).add(newIndex));
@@ -288,7 +322,7 @@ const AdminPage = () => {
     const updatedLessons = [...updatedModules[moduleIndex].lessons];
     updatedLessons[lessonIndex] = { ...updatedLessons[lessonIndex], [field]: value };
     updatedModules[moduleIndex].lessons = updatedLessons;
-    
+
     setCurrentCourse({ ...currentCourse, modules: updatedModules });
   };
 
@@ -324,44 +358,57 @@ const AdminPage = () => {
   // SAVE COURSE (CREATE / UPDATE)
   // ----------------------------------------------------------------------
   const saveCourse = async () => {
-    if (!currentCourse.title || !currentCourse.description) {
-      toast({
-        title: "Error",
-        description: "Por favor completa los campos obligatorios",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const isUpdating = !!currentCourse.id; // Verifica si tiene un ID
-    const endpointId = currentCourse.id || undefined; // Usa el ID para la URL si existe
     try {
-      // Construir Payload compatible con Rust DTOs
-      const payload = await Payload(currentCourse)
+      await courseValidationSchema.validate(currentCourse, { abortEarly: false });
 
-      await saveCourseAPI(payload, endpointId);
-
-      await loadCoursesFromDB();
-      resetForm();
-      toast({ title: "Éxito", description: "Curso guardado correctamente" });
-      setActiveTab("manage");
-    } catch (error: any) {
-      // Manejo específico si es un 500/404 que indica que el curso ya no existe.
-      // Si recibes un 500 o 404 y estabas actualizando, resetear el ID es clave.
-      if (isUpdating) {
-          // Si el servidor falla al actualizar un curso existente, 
-          // el curso podría haberse borrado. Desvinculamos el ID.
-          setEditingCourse(null);
-          setCurrentCourse(prev => ({ ...prev, id: "" }));
-          toast({
-              title: "Error de Sincronización",
-              description: `El curso con Title ${currentCourse.title} no se pudo actualizar. Se ha limpiado el formulario. Por favor, crea uno nuevo o recarga la lista.`,
-              variant: "destructive",
-          });
-      } else {
+      if (!currentCourse.title || !currentCourse.description) {
         toast({
           title: "Error",
-          description: error.message ?? "Error al guardar el curso",
+          description: "Por favor completa los campos obligatorios",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const isUpdating = !!currentCourse.id; // Verifica si tiene un ID
+      const endpointId = currentCourse.id || undefined; // Usa el ID para la URL si existe
+      try {
+        // Construir Payload compatible con Rust DTOs
+        const payload = await Payload(currentCourse)
+
+        await saveCourseAPI(payload, endpointId);
+
+        await loadCoursesFromDB();
+        resetForm();
+        toast({ title: "Éxito", description: "Curso guardado correctamente" });
+        setActiveTab("manage");
+      } catch (error: any) {
+        // Manejo específico si es un 500/404 que indica que el curso ya no existe.
+        // Si recibes un 500 o 404 y estabas actualizando, resetear el ID es clave.
+        if (isUpdating) {
+            // Si el servidor falla al actualizar un curso existente,
+            // el curso podría haberse borrado. Desvinculamos el ID.
+            setEditingCourse(null);
+            setCurrentCourse(prev => ({ ...prev, id: "" }));
+            toast({
+                title: "Error de Sincronización",
+                description: `El curso con Title ${currentCourse.title} no se pudo actualizar. Se ha limpiado el formulario. Por favor, crea uno nuevo o recarga la lista.`,
+                variant: "destructive",
+            });
+        } else {
+          toast({
+            title: "Error",
+            description: error.message ?? "Error al guardar el curso",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (validationError) {
+      if (validationError instanceof yup.ValidationError) {
+        const errorMessage = validationError.errors.join(', ');
+        toast({
+          title: "Error",
+          description: errorMessage,
           variant: "destructive",
         });
       }
@@ -428,7 +475,7 @@ const AdminPage = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate("/")}
+                onClick={() => navigate(-1)}
                 className="text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -460,7 +507,7 @@ const AdminPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                
+
                 {/* 1. INFORMACIÓN BÁSICA */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -519,8 +566,20 @@ const AdminPage = () => {
                   <div className="space-y-2">
                     <Label>URL de Imagen</Label>
                     <Input
+                      type="url"
+                      required
+                      placeholder="https://ejemplo.com/imagen.png"
                       value={currentCourse.image}
-                      onChange={(e) => setCurrentCourse({ ...currentCourse, image: e.target.value })}
+                      onChange={(e) =>
+                        setCurrentCourse({ ...currentCourse, image: e.target.value })
+                      }
+                      pattern="https?://.*"
+                      title="La URL debe comenzar con http:// o https://"
+                      className={
+                        currentCourse.image && !isValidUrl(currentCourse.image)
+                          ? "border-red-500"
+                          : ""
+                      }
                     />
                   </div>
                 </div>
@@ -561,9 +620,9 @@ const AdminPage = () => {
                     {currentCourse.features.map((feature, index) => (
                       <Badge key={index} variant="secondary" className="gap-2 pl-3">
                         {feature}
-                        <Trash2 
-                          className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                          onClick={() => removeFeature(index)} 
+                        <Trash2
+                          className="h-3 w-3 cursor-pointer hover:text-destructive"
+                          onClick={() => removeFeature(index)}
                         />
                       </Badge>
                     ))}
@@ -591,7 +650,7 @@ const AdminPage = () => {
                       return (
                         <Card key={mIndex} className="border-l-4 border-l-vallenato-red shadow-sm">
                           <div className="p-4 bg-card rounded-t-lg flex flex-col gap-4">
-                            
+
                             {/* Header del Módulo */}
                             <div className="flex items-center gap-3">
                               <div className="cursor-grab text-muted-foreground">
@@ -635,16 +694,16 @@ const AdminPage = () => {
                                     <Plus className="h-3 w-3 mr-1" /> Lección
                                   </Button>
                                 </div>
-                                
+
                                 {module.lessons.map((lesson, lIndex) => (
                                   <div key={lIndex} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-start p-3 bg-background border rounded-md shadow-sm">
                                     {/* Título y Orden */}
                                     <div className="md:col-span-3 space-y-1">
                                       <Label className="text-[10px] uppercase text-muted-foreground">Título</Label>
-                                      <Input 
-                                        value={lesson.title} 
+                                      <Input
+                                        value={lesson.title}
                                         onChange={(e) => updateLesson(mIndex, lIndex, "title", e.target.value)}
-                                        placeholder="Intro..." 
+                                        placeholder="Intro..."
                                         className="h-8 text-sm"
                                       />
                                     </div>
@@ -652,8 +711,8 @@ const AdminPage = () => {
                                     {/* Tipo */}
                                     <div className="md:col-span-2 space-y-1">
                                       <Label className="text-[10px] uppercase text-muted-foreground">Tipo</Label>
-                                      <Select 
-                                        value={lesson.type} 
+                                      <Select
+                                        value={lesson.type}
                                         onValueChange={(val) => updateLesson(mIndex, lIndex, "type", val)}
                                       >
                                         <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
@@ -668,21 +727,21 @@ const AdminPage = () => {
                                     {/* URL Contenido */}
                                     <div className="md:col-span-3 space-y-1">
                                       <Label className="text-[10px] uppercase text-muted-foreground">URL Contenido / Video</Label>
-                                      <Input 
-                                        value={lesson.content_url} 
+                                      <Input
+                                        value={lesson.content_url}
                                         onChange={(e) => updateLesson(mIndex, lIndex, "content_url", e.target.value)}
-                                        placeholder="https://..." 
+                                        placeholder="https://..."
                                         className="h-8 text-sm"
                                       />
                                     </div>
-                                    
-                                     {/* Duración */}
-                                     <div className="md:col-span-2 space-y-1">
+
+                                    {/* Duración */}
+                                    <div className="md:col-span-2 space-y-1">
                                       <Label className="text-[10px] uppercase text-muted-foreground">Duración</Label>
-                                      <Input 
-                                        value={lesson.duration} 
+                                      <Input
+                                        value={lesson.duration}
                                         onChange={(e) => updateLesson(mIndex, lIndex, "duration", e.target.value)}
-                                        placeholder="10:00" 
+                                        placeholder="10:00"
                                         className="h-8 text-sm"
                                       />
                                     </div>
@@ -696,10 +755,10 @@ const AdminPage = () => {
 
                                     {/* Descripción (Opcional, expandible o debajo) */}
                                     <div className="md:col-span-12 mt-1">
-                                       <Input 
-                                        value={lesson.description} 
+                                       <Input
+                                        value={lesson.description}
                                         onChange={(e) => updateLesson(mIndex, lIndex, "description", e.target.value)}
-                                        placeholder="Descripción breve de la lección..." 
+                                        placeholder="Descripción breve de la lección..."
                                         className="h-7 text-xs bg-muted/20 border-transparent focus:bg-background focus:border-input"
                                       />
                                     </div>
@@ -733,7 +792,7 @@ const AdminPage = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-vallenato-red">Cursos Disponibles ({filteredCourses.length})</CardTitle>
-                
+
                 {/* Controles de Filtro */}
                 <div className="flex flex-col xl:flex-row gap-4 mt-4">
                   <Input
@@ -801,7 +860,7 @@ const AdminPage = () => {
                                 <h3 className="font-bold text-lg line-clamp-1 group-hover:text-vallenato-red transition-colors">{course.title}</h3>
                                 <p className="text-sm text-muted-foreground line-clamp-2 h-10">{course.description}</p>
                             </div>
-                            
+
                             <div className="flex items-center justify-between text-sm pt-2 border-t">
                                 <span className="font-mono font-bold">${course.price}</span>
                                 <span className="text-muted-foreground">{course.modules.length} Módulos</span>
@@ -811,8 +870,8 @@ const AdminPage = () => {
                                 <Button variant="outline" size="sm" className="flex-1" onClick={() => editCourse(course)}>
                                     Editar
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={() => navigate(`/curso/${course.id}`)}>
-                                    <Eye className="h-4 w-4" />
+                                <Button variant="ghost" size="sm" onClick={() => navigate(`/curso/${course.id}`)}>
+                                  Ver
                                 </Button>
                                 <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => deleteCourse(course.id)}>
                                     <Trash2 className="h-4 w-4" />

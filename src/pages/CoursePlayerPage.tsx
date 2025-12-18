@@ -335,10 +335,10 @@ const CoursePlayerPage = () => {
           <div className="flex items-center space-x-4">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/cursos')}
+              onClick={() => navigate(-1)}
               className="text-muted-foreground hover:text-primary"
             >
-              ← Volver a Cursos
+              ← Volver
             </Button>
             <Separator orientation="vertical" className="h-6" />
             <div>
