@@ -13,6 +13,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,12 @@ const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminRoute = lazy(() => import("./components/AdminRoute"));
+
+const paypalOptions = {
+  clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID,
+  currency: "USD",
+  intent: "capture",
+};
 
 /* ============================
    Fallback ULTRA liviano
@@ -51,7 +58,12 @@ const App = () => (
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/cursos" element={<CoursesPage />} />
+            <Route path="/cursos" element={
+              <PayPalScriptProvider options={paypalOptions}>
+                <CoursesPage />
+              </PayPalScriptProvider>
+            } 
+            />
             <Route path="/curso/:courseId" element={<CoursePlayerPage />} />
             <Route path="/perfil" element={<ProfilePage />} />
 

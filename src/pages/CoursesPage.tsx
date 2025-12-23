@@ -12,19 +12,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { fetchCourses_API } from "@/api/admin"; // Asegúrate de que la ruta sea correcta
+import { fetchCourses_API } from "@/api/admin";
 import { getCurrentUser } from "@/api/auth";
 import { toast } from "sonner";
+import PaypalCheckout from "@/components/Paypalbutton";
+import { API_URL } from "@/config/api";
 
-// Simulando estados de usuario
 type UserState = "guest" | "logged-in";
-type CourseType = "basic" | "premium";
 
 const CoursesPage = () => {
   const navigate = useNavigate();
   const [userState, setUserState] = useState<UserState>("guest");
-  const [courses, setCourses] = useState<any[]>([]); // Cursos que vamos a cargar
+  const [courses, setCourses] = useState<any[]>([]);
+  const [purchasedCourses, setPurchasedCourses] = useState<Set<string>>(new Set());
   const [loadingUser, setLoadingUser] = useState(true);
+  const [courseToPay, setCourseToPay] = useState<any | null>(null);
+
 
   // Verificar autenticación
   useEffect(() => {
@@ -56,17 +59,74 @@ const CoursesPage = () => {
     loadCourses();
   }, []);
 
+  // Cargar cursos comprados
+  useEffect(() => {
+    const loadPurchasedCourses = async () => {
+      if (userState !== "logged-in") return;
+
+      try {
+        const response = await fetch(`${API_URL}/api/mycourses`, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error(`No se pudo obtener los cursos. Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.courseIds) {
+          throw new Error("La respuesta no contiene courseIds");
+        }
+
+        setPurchasedCourses(new Set(data.courseIds));
+      } catch (error) {
+        toast.error(`Error al cargar cursos comprados: ${(error as Error).message}`);
+        console.error("", error);
+      }
+    };
+
+    loadPurchasedCourses();
+  }, [userState]);
+
   const getActionButton = (course: any) => {
     if (userState === "guest") {
       return (
         <Button
           variant="outline"
           className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-          onClick={() => navigate("/#inicio")} // 🔥 YA NO CAMBIA EL ESTADO
+          onClick={() => navigate("/#inicio")}
         >
           <Lock className="h-4 w-4 mr-2" />
           Inicia Sesión para Acceder
         </Button>
+      );
+    }
+
+    if (purchasedCourses.has(course.id)) {
+      return (
+        <Button
+          variant="hero"
+          className="w-full shadow-elegant"
+          size="lg"
+          onClick={() => navigate(`/curso/${course.id}`)}
+        >
+          <Play className="h-4 w-4 mr-2" />
+          Ver Curso
+        </Button>
+      );
+    }
+
+    if (course.category === "premium") {
+      return (
+        <Button
+        variant="hero"
+        className="w-full shadow-elegant"
+        size="lg"
+        onClick={() => setCourseToPay(course)}
+      >
+        Comprar Curso
+      </Button>
       );
     }
 
@@ -138,7 +198,7 @@ const CoursesPage = () => {
                           variant="secondary"
                           className={`bg-${course.color}/10 text-${course.color} border-${course.color}/20`}
                         >
-                          {course.level} {/* Básico, Intermedio, Avanzado */}
+                          {course.level}
                         </Badge>
 
                         {!(
@@ -252,6 +312,12 @@ const CoursesPage = () => {
                   </div>
                 </Card>
               ))}
+              {courseToPay && (
+              <PaypalCheckout
+                course={courseToPay}
+                onClose={() => setCourseToPay(null)}
+              />
+            )}
             </div>
 
             {/* Call to Action */}

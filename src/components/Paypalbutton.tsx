@@ -1,58 +1,83 @@
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import { PayPalButtons } from "@paypal/react-paypal-js";
 import { API_URL } from "@/config/api";
+import { toast } from "sonner";
 
-function PaypalCheckout({ course }) {
+interface PaypalCheckoutProps {
+  course: {
+    id: string;
+    title: string;
+    price: number;
+  };
+  onClose: () => void;
+}
+
+function PaypalCheckout({ course, onClose }: PaypalCheckoutProps) {
   return (
-    <PayPalScriptProvider
-      options={{
-        clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID,
-        currency: "USD",
-        intent: "capture", // importante para que PayPal capture el pago al aprobar
-      }}
-    >
-      <PayPalButtons
-        style={{ layout: "vertical" }}
-        
-        // Se ejecuta cuando el usuario hace clic y se va a crear la orden en tu backend
-        createOrder={async () => {
-          const res = await fetch(
-            `${API_URL}/api/courses/${course.id}/create-order`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md mx-4 my-8">
+        <h2 className="text-lg md:text-xl font-bold mb-4">
+          Comprar {course.title}
+        </h2>
+
+        <PayPalButtons
+          style={{ layout: "vertical", height: 40 }}
+
+          createOrder={async () => {
+            const res = await fetch(
+              `${API_URL}/api/courses/${course.id}/create-order`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+              }
+            );
+
+            if (!res.ok) {
+              const errorData = await res.json();
+              throw new Error(errorData.message || "Error al crear la orden");
             }
-          );
 
-          const data = await res.json();
-          return data.orderID; // PayPal requiere que devuelvas orderID aquí
-        }}
+            const data = await res.json();
+            return data.orderID;
+          }}
 
-        // Se ejecuta cuando PayPal aprueba el pago
-        onApprove={async (data) => {
-          // “data.orderID” es enviado por PayPal, y lo pasamos a nuestro backend para capturar el pago
-          const res = await fetch(
-            `${API_URL}/api/paypal/capture/${data.orderID}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
+          onApprove={async (data, actions) => {
+            if (!actions) return;
+
+            const res = await fetch(
+              `${API_URL}/api/paypal/capture/${data.orderID}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+              }
+            );
+
+            const captureData = await res.json();
+
+            if (captureData.status === "COMPLETED") {
+              toast.success(`Pago exitoso: ${course.title}`);
+              onClose(); // 👈 CERRAR PAYPAL AQUÍ
+            } else {
+              toast.error("El pago no se completó");
             }
-          );
+          }}
 
-          const captureData = await res.json();
-          if (captureData.status === "COMPLETED") {
-            // Aquí puedes actualizar tu UI, mostrar mensaje de éxito, etc.
-            alert("¡Pago completado con éxito!");
-          } else {
-            alert("Hubo un error al capturar el pago.");
-          }
-        }}
+          onCancel={onClose}
+          onError={(err) => {
+            console.error("PayPal error:", err);
+            toast.error("Error durante el pago");
+          }}
+        />
 
-        onError={(err) => {
-          console.error("PayPal error:", err);
-          alert("Ocurrió un error durante el pago.");
-        }}
-      />
-    </PayPalScriptProvider>
+        <button
+          onClick={onClose}
+          className="w-full mt-4 border rounded py-2"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
   );
 }
 
