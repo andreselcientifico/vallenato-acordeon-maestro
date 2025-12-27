@@ -1,73 +1,110 @@
-# Welcome to your Lovable project
+# Academia Vallenato
 
-## Project info
+Una plataforma educativa completa para aprender música vallenata, construida con tecnologías modernas web.
 
-**URL**: https://lovable.dev/projects/fc92a510-1d3a-4196-9564-57905f640173
+## Descripción del Proyecto
 
-## How can I edit this code?
+Esta aplicación es una academia en línea especializada en la enseñanza de música vallenata. Incluye:
 
-There are several ways of editing your application.
+- **Catálogo de cursos**: Navegación por cursos básicos y premium con filtros por categoría, nivel y calificación
+- **Sistema de autenticación**: Registro e inicio de sesión de usuarios
+- **Reproductor de cursos**: Visualización de lecciones con soporte para videos, cuestionarios y ejercicios
+- **Seguimiento de progreso**: Sistema completo para marcar lecciones como completadas y visualizar el progreso
+- **Perfil de usuario**: Gestión del perfil y visualización de cursos adquiridos
+- **Integración de pagos**: Sistema de pago con PayPal para cursos premium
 
-**Use Lovable**
+## Tecnologías Utilizadas
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/fc92a510-1d3a-4196-9564-57905f640173) and start prompting.
+- **Frontend**: React 18 con TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS con shadcn/ui components
+- **Icons**: Lucide React
+- **HTTP Client**: Fetch API nativo
+- **State Management**: React hooks (useState, useEffect)
+- **Routing**: React Router
+- **Package Manager**: Bun
 
-Changes made via Lovable will be committed automatically to this repo.
+## Inicio del Proyecto
 
-**Use your preferred IDE**
+Este proyecto se inició con la ayuda de Lovable, una plataforma de desarrollo asistido por IA, pero ha sido completamente modificado y construido por el desarrollador principal (andreselcientifico).
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Cómo Ejecutar el Proyecto
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerrequisitos
 
-Follow these steps:
+- **Bun**: Asegúrate de tener Bun instalado. Si no lo tienes, instálalo desde [bun.sh](https://bun.sh)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Instalación y Ejecución
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```bash
+# Clona el repositorio
+git clone <[URL_DEL_REPOSITORIO](https://github.com/andreselcientifico/vallenato-acordeon-maestro.git)>
+cd frontend_vallenato
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Instala las dependencias con Bun
+bun install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# Inicia el servidor de desarrollo
+bun run dev
 ```
 
-**Edit a file directly in GitHub**
+El servidor de desarrollo se iniciará en `http://localhost:5173` (o el puerto que Vite asigne).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Comandos Disponibles
 
-**Use GitHub Codespaces**
+- `bun run dev` - Inicia el servidor de desarrollo
+- `bun run build` - Construye la aplicación para producción
+- `bun run preview` - Vista previa de la build de producción
+- `bun run lint` - Ejecuta el linter
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Estructura del Proyecto
 
-## What technologies are used for this project?
+```
+src/
+├── api/           # Funciones para llamadas a la API
+├── assets/        # Recursos estáticos
+├── components/    # Componentes reutilizables
+│   ├── ui/       # Componentes de shadcn/ui
+│   └── ...       # Otros componentes
+├── context/      # Contextos de React (AuthContext)
+├── hooks/        # Hooks personalizados
+├── lib/          # Utilidades
+├── pages/        # Páginas principales de la aplicación
+└── ...
+```
 
-This project is built with:
+## Características Principales
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Sistema de Cursos
+- Visualización de cursos con imágenes y descripciones
+- Filtros por categoría (básico/premium), nivel y calificación
+- Sistema de búsqueda
 
-## How can I deploy this project?
+### Autenticación
+- Registro e inicio de sesión
+- Protección de rutas
+- Gestión de estado de autenticación
 
-Simply open [Lovable](https://lovable.dev/projects/fc92a510-1d3a-4196-9564-57905f640173) and click on Share -> Publish.
+### Reproductor de Lecciones
+- Soporte para videos (YouTube, archivos locales)
+- Cuestionarios y ejercicios interactivos
+- Seguimiento automático de progreso
+- Navegación entre lecciones
 
-## Can I connect a custom domain to my Lovable project?
+### Perfil de Usuario
+- Visualización de cursos adquiridos
+- Progreso general de aprendizaje
 
-Yes, you can!
+## Contribución
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Este proyecto es mantenido por el desarrollador principal. Para contribuir:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit tus cambios (`git commit -am 'Agrega nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Abre un Pull Request
+
+## Licencia
+
+Este proyecto es privado y todos los derechos están reservados.
