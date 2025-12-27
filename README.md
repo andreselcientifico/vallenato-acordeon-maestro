@@ -38,7 +38,7 @@ Este proyecto se inició con la ayuda de Lovable, una plataforma de desarrollo a
 
 ```bash
 # Clona el repositorio
-git clone <[URL_DEL_REPOSITORIO](https://github.com/andreselcientifico/vallenato-acordeon-maestro.git)>
+git clone <URL_DEL_REPOSITORIO>
 cd frontend_vallenato
 
 # Instala las dependencias con Bun
