@@ -22,6 +22,7 @@ const queryClient = new QueryClient();
    ============================ */
 const Index = lazy(() => import("./pages/Index"));
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
+const MyCoursesPage = lazy(() => import("./pages/MyCoursesPage"));
 const CoursePlayerPage = lazy(() => import("./pages/CoursePlayerPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
@@ -59,11 +60,14 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/cursos" element={
-              <PayPalScriptProvider options={paypalOptions}>
-                <CoursesPage />
-              </PayPalScriptProvider>
+              <TooltipProvider>
+                <PayPalScriptProvider options={paypalOptions}>
+                  <CoursesPage />
+                </PayPalScriptProvider>
+              </TooltipProvider>
             } 
             />
+            <Route path="/mis-cursos" element={<MyCoursesPage />} />
             <Route path="/curso/:courseId" element={<CoursePlayerPage />} />
             <Route path="/perfil" element={<ProfilePage />} />
 

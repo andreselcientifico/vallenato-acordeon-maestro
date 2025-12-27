@@ -118,7 +118,7 @@ const Header = () => {
                 <User className="h-4 w-4 mr-2" />
                 Mi Perfil
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/cursos')}>
+              <DropdownMenuItem onClick={() => navigate('/mis-cursos')}>
                 <Music className="h-4 w-4 mr-2" />
                 Mis Cursos
               </DropdownMenuItem>
@@ -174,7 +174,7 @@ const Header = () => {
                     <User className="h-5 w-5" />
                     <span>Mi Perfil</span>
                   </button>
-                  <button onClick={() => { navigate('/cursos'); setMobileOpen(false); }} className="flex items-center space-x-2">
+                  <button onClick={() => { navigate('/mis-cursos'); setMobileOpen(false); }} className="flex items-center space-x-2">
                     <Music className="h-5 w-5" />
                     <span>Mis Cursos</span>
                   </button>

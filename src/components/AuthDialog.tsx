@@ -15,12 +15,17 @@ import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { loginUser, registerUser } from "../api/auth";
 
 interface AuthDialogProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onLogin?: (userData: { email: string; name: string }) => void;
 }
 
-const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = open !== undefined;
+  const isOpen = isControlled ? open : internalOpen;
+  const setIsOpen = isControlled ? (onOpenChange || (() => {})) : setInternalOpen;
   const [showPassword, setShowPassword] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
@@ -76,7 +81,7 @@ const AuthDialog = ({ children, onLogin }: AuthDialogProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {!isControlled && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold text-primary">

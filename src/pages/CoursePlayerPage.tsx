@@ -31,7 +31,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 // Importar los tipos actualizados
 import { CourseDetails, getCourseDetails, Lesson, Module } from "@/api/courses"; 
-import VideoPlayer from "@/components/VideoPlayer";
+import { API_URL } from "@/config/api";
 
 interface Comment {
   id: string;
@@ -214,30 +214,42 @@ const CoursePlayerPage = () => {
   ]);
   
   // Lógica de carga de datos
-  useEffect(() => {
-    if (!courseId) return;
-    setLoading(true);
+useEffect(() => {
+  if (!courseId) return;
+  setLoading(true);
 
-    getCourseDetails(courseId)
-      .then((data) => {
-        setCourseData(data);
-        // Selecciona la primera lección del primer módulo
-        if (data.modules.length > 0 && data.modules[0].lessons.length > 0) {
-          setCurrentLesson(data.modules[0].lessons[0]);
-        }
-      })
-      .catch((err) => {
-        // Manejo de errores (similar a tu código original)
-        const errorMessage = err.message || "Error desconocido al obtener el curso.";
-        if (errorMessage.includes("Permission denied") || errorMessage.includes("403")) {
-          toast({ title: "Acceso denegado", description: "No tienes permiso para ver este curso." });
-          navigate("/", { replace: true });
-        } else {
-          toast({ title: "Error", description: errorMessage, variant: "destructive" });
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [courseId, navigate, toast]);
+  getCourseDetails(courseId)
+    .then((data) => {
+      setCourseData(data);
+
+      // Buscar la primera lección no completada
+      const firstIncompleteLesson = data.modules
+        .flatMap(m => m.lessons)
+        .sort((a, b) => a.order - b.order) // Asegurarse de respetar el orden
+        .find(l => !l.completed);
+
+      // Si todas las lecciones están completadas, usar la última
+      const initialLesson =
+        firstIncompleteLesson ||
+        data.modules
+          .flatMap(m => m.lessons)
+          .sort((a, b) => a.order - b.order)
+          .slice(-1)[0];
+
+      setCurrentLesson(initialLesson || null); // null si no hay lecciones
+    })
+    .catch((err) => {
+      const errorMessage = err.message || "Error desconocido al obtener el curso.";
+      if (errorMessage.includes("Permission denied") || errorMessage.includes("403")) {
+        toast({ title: "Acceso denegado", description: "No tienes permiso para ver este curso." });
+        navigate("/", { replace: true });
+      } else {
+        toast({ title: "Error", description: errorMessage, variant: "destructive" });
+      }
+    })
+    .finally(() => setLoading(false));
+}, [courseId, navigate, toast]);
+
 
   const toggleModule = (moduleId: string) => {
     setExpandedModules(prev => 
@@ -253,35 +265,71 @@ const CoursePlayerPage = () => {
     setIsPlaying(false); 
   };
 
-  const markLessonComplete = (lessonId: string) => {
-    // Aquí iría la llamada a la API para actualizar el estado en el backend
-    // Por ahora, solo actualizamos el estado local para la demostración
-    setCourseData(prevData => {
-      if (!prevData) return null;
-      let newCompletedLessons = prevData.completed_lessons;
-      
-      const updatedModules = prevData.modules.map(module => ({
-        ...module,
-        lessons: module.lessons.map(lesson => {
-          if (lesson.id === lessonId && !lesson.completed) {
-            newCompletedLessons++;
-            return { ...lesson, completed: true };
-          }
-          return lesson;
-        })
-      }));
-      
-      return { 
-        ...prevData, 
-        modules: updatedModules,
-        completed_lessons: newCompletedLessons
-      };
-    });
+  const markLessonComplete = async (lessonId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/courses/${courseId}/lessons/${currentLesson.id}/progress`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isCompleted: true,
+          progress: 1.0, // 100% completado
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al marcar la lección como completada');
+      }
+
+      setCourseData(prevData => {
+        if (!prevData) return null;
+        let newCompletedLessons = prevData.completed_lessons;
+        
+        const updatedModules = prevData.modules.map(module => ({
+          ...module,
+          lessons: module.lessons.map(lesson => {
+            if (lesson.id === lessonId && !lesson.completed) {
+              newCompletedLessons++;
+              return { ...lesson, completed: true };
+            }
+            return lesson;
+          })
+        }));
+
+        // Calcular la siguiente lección usando el estado actualizado
+        const allLessons = updatedModules
+          .flatMap(m => m.lessons)
+          .sort((a, b) => a.order - b.order);
+        
+        const currentIndex = allLessons.findIndex(l => l.id === lessonId);
+        const nextLesson = allLessons[currentIndex + 1];
+
+        // Cambiar a la siguiente lección si existe
+        if (nextLesson) {
+          setCurrentLesson(nextLesson);
+          setIsPlaying(false); // Reiniciar reproducción
+        }
+
+        return { 
+          ...prevData, 
+          modules: updatedModules,
+          completed_lessons: newCompletedLessons
+        };
+      });
     
     toast({
       title: "¡Lección completada!",
       description: "Has completado esta lección exitosamente.",
     });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `No se pudo marcar la lección como completada: ${error.message}`,
+        variant: "destructive",
+      });
+    }
   };
 
   const addComment = () => { /* ... lógica de comentarios ... */ };

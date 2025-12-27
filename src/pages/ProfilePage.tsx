@@ -32,6 +32,7 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { getUserProfile, updateUserProfile } from "@/api/user";
+import { getCourseDetails } from "@/api/courses";
 import { useAuth } from "@/context/AuthContext";
 
 const ProfilePage = () => {
@@ -55,7 +56,29 @@ const ProfilePage = () => {
       try {
         const res = await getUserProfile();
         setUserInfo(res.data.user);
-        setCoursesData(res.data.courses || []);
+
+        // Cargar detalles completos de cada curso para obtener progreso real
+        const basicCourses = res.data.courses || [];
+        const detailedCourses = await Promise.all(
+          basicCourses.map(async (course: any) => {
+            try {
+              const details = await getCourseDetails(course.id);
+              return {
+                ...course,
+                modules: details.modules || [],
+                totalLessons: details.total_lessons || 0,
+                completedLessons: details.completed_lessons || 0,
+                progress: details.total_lessons > 0 ? Math.round((details.completed_lessons / details.total_lessons) * 100) : 0,
+              };
+            } catch (error) {
+              // Si falla cargar detalles, usar datos básicos
+              console.warn(`Failed to load details for course ${course.id}:`, error);
+              return course;
+            }
+          })
+        );
+
+        setCoursesData(detailedCourses);
         setAchievements(res.data.achievements || []);
         setNotifications({
           emailNotifications: res.data.user.email_notifications ?? true,
