@@ -9,13 +9,24 @@ import {
   Star,
   BookOpen,
   Search,
+  Unlock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { fetchCourses_API } from "@/api/admin";
 import { getCurrentUser } from "@/api/auth";
 import { toast } from "sonner";
@@ -29,30 +40,55 @@ const CoursesPage = () => {
   const navigate = useNavigate();
   const [userState, setUserState] = useState<UserState>("guest");
   const [courses, setCourses] = useState<any[]>([]);
-  const [purchasedCourses, setPurchasedCourses] = useState<Set<string>>(new Set());
+  const [purchasedCourses, setPurchasedCourses] = useState<Set<string>>(
+    new Set()
+  );
   const [loadingUser, setLoadingUser] = useState(true);
   const [courseToPay, setCourseToPay] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterCategory, setFilterCategory] = useState<"all" | "básico" | "premium">("all");
-  const [filterLevel, setFilterLevel] = useState<"all" | "básico" | "intermedio" | "avanzado">("all");
-  const [filterRating, setFilterRating] = useState<"all" | "4" | "3" | "2" | "1">("all");
+  const [filterCategory, setFilterCategory] = useState<
+    "all" | "básico" | "premium"
+  >("all");
+  const [filterLevel, setFilterLevel] = useState<
+    "all" | "básico" | "intermedio" | "avanzado"
+  >("all");
+  const [filterRating, setFilterRating] = useState<
+    "all" | "4" | "3" | "2" | "1"
+  >("all");
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
-
+  const [loadingAccess, setLoadingAccess] = useState(true);
 
   // Verificar autenticación
   useEffect(() => {
-    const checkUserAuthentication = async () => {
+    const loadUserAndPurchases = async () => {
       try {
         const user = await getCurrentUser();
-        setUserState(user ? "logged-in" : "guest");
+
+        if (!user) {
+          setUserState("guest");
+          return;
+        }
+
+        setUserState("logged-in");
+
+        const response = await fetch(`${API_URL}/api/mycourses`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error("No se pudieron cargar los cursos comprados");
+        }
+
+        const data = await response.json();
+        setPurchasedCourses(new Set(data.courseIds));
       } catch {
         setUserState("guest");
       } finally {
-        setLoadingUser(false);
+        setLoadingAccess(false);
       }
     };
 
-    checkUserAuthentication();
+    loadUserAndPurchases();
   }, []);
 
   // Cargar cursos
@@ -69,132 +105,109 @@ const CoursesPage = () => {
     loadCourses();
   }, []);
 
-  // Cargar cursos comprados
-  useEffect(() => {
-    const loadPurchasedCourses = async () => {
-      if (userState !== "logged-in") return;
+  const CourseCategoryBadge = ({ category }: { category: "premium" | "básico" }) => {
+    if (category === "premium") {
+      return (
+        <div className="flex items-center space-x-1">
+          <Star className="h-3 w-3 fill-current text-yellow-500" />
+          <span>Premium</span>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="flex items-center space-x-1">
+        <Unlock className="h-3 w-3 text-primary" />
+        <span>Básico</span>
+      </div>
+    );
+  };
 
-      try {
-        const response = await fetch(`${API_URL}/api/mycourses`, {
-          method: "GET",
-          credentials: "include",
-        });
-        if (!response.ok) {
-          throw new Error(`No se pudo obtener los cursos. Status: ${response.status}`);
-        }
 
-        const data = await response.json();
+  const getActionButton = (course) => {
+    if (loadingAccess) {
+      return (
+        <Button disabled className="w-full opacity-70">
+          Cargando...
+        </Button>
+      );
+    }
 
-        if (!data.courseIds) {
-          throw new Error("La respuesta no contiene courseIds");
-        }
-
-        setPurchasedCourses(new Set(data.courseIds));
-      } catch (error) {
-        toast.error(`Error al cargar cursos comprados: ${(error as Error).message}`);
-        console.error("", error);
-      }
-    };
-
-    loadPurchasedCourses();
-  }, [userState]);
-
-  const getActionButton = (course: any) => {
     if (userState === "guest") {
       return (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-              onClick={() => setAuthDialogOpen(true)}
-            >
-              <Lock className="h-4 w-4 mr-2" />
-              Inicia Sesión para Acceder
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Regístrate o inicia sesión para acceder a los cursos</p>
-          </TooltipContent>
-        </Tooltip>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => setAuthDialogOpen(true)}
+        >
+          <Lock className="h-4 w-4 mr-2" />
+          Inicia sesión
+        </Button>
       );
     }
 
     if (purchasedCourses.has(course.id)) {
       return (
+        <Button
+          variant="hero"
+          className="w-full"
+          onClick={() => navigate(`/curso/${course.id}`)}
+        >
+          <Play className="h-4 w-4 mr-2" />
+          Ver curso
+        </Button>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              onClick={() => navigate(`/curso/${course.id}/preview`)}
+            >
+              <Play className="h-4 w-4 mr-2" />
+              Ver Vista Previa
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Ve una muestra del curso antes de comprarlo</p>
+          </TooltipContent>
+        </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="hero"
               className="w-full shadow-elegant"
-              onClick={() => navigate(`/curso/${course.id}`)}
+              onClick={() => setCourseToPay(course)}
             >
-              <Play className="h-4 w-4 mr-2" />
-              Ver Curso
+              Comprar Curso
             </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Continúa aprendiendo donde lo dejaste</p>
-          </TooltipContent>
-        </Tooltip>
-      );
-    }
-
-    if (course.category === "premium") {
-      return (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-            variant="hero"
-            className="w-full shadow-elegant"
-            onClick={() => setCourseToPay(course)}
-          >
-            Comprar Curso
-          </Button>
           </TooltipTrigger>
           <TooltipContent>
             <p>Adquiere acceso completo a este curso premium</p>
           </TooltipContent>
         </Tooltip>
-      );
-    }
-
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="hero"
-            className="w-full shadow-elegant"
-            onClick={() => navigate(`/curso/${course.id}`)}
-          >
-            <Play className="h-4 w-4 mr-2" />
-            Comenzar Curso
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Inicia este curso básico gratuito</p>
-        </TooltipContent>
-      </Tooltip>
+      </div>
     );
   };
 
-  if (loadingUser) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen gap-3 text-center">
-        <div className="animate-spin h-10 w-10 border-4 border-t-transparent border-primary rounded-full"></div>
-        <p className="text-lg text-muted-foreground">Cargando…</p>
-      </div>
-    );
-  }
-
   const filteredCourses = courses
-    .filter(course =>
-      course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.description.toLowerCase().includes(searchQuery.toLowerCase())
+    .filter(
+      (course) =>
+        course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.description.toLowerCase().includes(searchQuery.toLowerCase())
     )
-    .filter(course => filterCategory === "all" || course.category === filterCategory)
-    .filter(course => filterLevel === "all" || course.level === filterLevel)
-    .filter(course => filterRating === "all" || course.rating >= parseInt(filterRating));
+    .filter(
+      (course) => filterCategory === "all" || course.category === filterCategory
+    )
+    .filter((course) => filterLevel === "all" || course.level === filterLevel)
+    .filter(
+      (course) =>
+        filterRating === "all" || course.rating >= parseInt(filterRating)
+    );
 
   return (
     <div className="min-h-screen">
@@ -235,87 +248,104 @@ const CoursesPage = () => {
                       className="pl-10"
                     />
                   </div>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Select value={filterCategory} onValueChange={(value: "all" | "básico" | "premium") => setFilterCategory(value)}>
-                          <SelectTrigger className="w-32">
-                            <SelectValue placeholder="Categoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Todas</SelectItem>
-                            <SelectItem value="básico">Básico</SelectItem>
-                            <SelectItem value="premium">Premium</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Filtrar por tipo de curso: Básico (gratuito) o Premium (de pago)</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Select value={filterLevel} onValueChange={(value: "all" | "básico" | "intermedio" | "avanzado") => setFilterLevel(value)}>
-                          <SelectTrigger className="w-32">
-                            <SelectValue placeholder="Nivel" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Todos</SelectItem>
-                            <SelectItem value="básico">Básico</SelectItem>
-                            <SelectItem value="intermedio">Intermedio</SelectItem>
-                            <SelectItem value="avanzado">Avanzado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Filtrar por nivel de dificultad del curso</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Select value={filterRating} onValueChange={(value: "all" | "4" | "3" | "2" | "1") => setFilterRating(value)}>
-                          <SelectTrigger className="w-32">
-                            <SelectValue placeholder="Estrellas" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Todas</SelectItem>
-                            <SelectItem value="4">4+ ⭐</SelectItem>
-                            <SelectItem value="3">3+ ⭐</SelectItem>
-                            <SelectItem value="2">2+ ⭐</SelectItem>
-                            <SelectItem value="1">1+ ⭐</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Mostrar cursos con al menos esta calificación en estrellas</p>
-                      </TooltipContent>
-                    </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Select
+                        value={filterCategory}
+                        onValueChange={(value: "all" | "básico" | "premium") =>
+                          setFilterCategory(value)
+                        }
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue placeholder="Categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas</SelectItem>
+                          <SelectItem value="básico">Básico</SelectItem>
+                          <SelectItem value="premium">Premium</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        Filtrar por tipo de curso: Básico (gratuito) o Premium
+                        (de pago)
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Select
+                        value={filterLevel}
+                        onValueChange={(
+                          value: "all" | "básico" | "intermedio" | "avanzado"
+                        ) => setFilterLevel(value)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue placeholder="Nivel" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos</SelectItem>
+                          <SelectItem value="básico">Básico</SelectItem>
+                          <SelectItem value="intermedio">Intermedio</SelectItem>
+                          <SelectItem value="avanzado">Avanzado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Filtrar por nivel de dificultad del curso</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Select
+                        value={filterRating}
+                        onValueChange={(value: "all" | "4" | "3" | "2" | "1") =>
+                          setFilterRating(value)
+                        }
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue placeholder="Estrellas" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas</SelectItem>
+                          <SelectItem value="4">4+ ⭐</SelectItem>
+                          <SelectItem value="3">3+ ⭐</SelectItem>
+                          <SelectItem value="2">2+ ⭐</SelectItem>
+                          <SelectItem value="1">1+ ⭐</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        Mostrar cursos con al menos esta calificación en
+                        estrellas
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </div>
 
             {/* Courses Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredCourses.map((course) => (
+              {filteredCourses.map((course) => {const category = course.category?.toLowerCase().trim(); return (
                 <Card
                   key={course.id}
-                  className="bg-gradient-card shadow-elegant border-primary/20 overflow-hidden group hover:shadow-warm transition-all duration-300 hover:scale-105"
+                  className="bg-gradient-card shadow-elegant border-primary/20 overflow-hidden group hover:shadow-warm transition-all duration-300 hover:scale-105 flex flex-col"
                 >
                   <div className="relative">
                     <img
-                      src={course.image || '/placeholder-course.jpg'}
+                      src={course.image || "/placeholder-course.jpg"}
                       alt={course.title}
                       className="w-full h-32 object-cover rounded-t-lg"
                     />
                   </div>
 
-                  <div className="p-4 relative">
+                  <div className="p-4 relative flex flex-col flex-1">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-2">
-                        <Badge
-                          variant="secondary"
-                        >
-                          {course.level}
-                        </Badge>
+                        <Badge variant="secondary">{course.level}</Badge>
 
                         {!(
                           course.level.toLowerCase() === "básico" &&
@@ -323,18 +353,19 @@ const CoursesPage = () => {
                         ) && (
                           <Badge
                             variant={
-                              course.category === "premium" ? "default" : "outline"
+                              category === "premium"
+                                ? "default"
+                                : "outline"
                             }
                             className={
-                              course.category === "premium"
+                              category === "premium"
                                 ? "bg-gradient-accent text-white"
                                 : ""
                             }
                           >
-                            {course.category === "premium"
-                              ? "⭐ Premium"
-                              : "🆓 Básico"}
+                            <CourseCategoryBadge category={category} />
                           </Badge>
+
                         )}
                       </div>
                       <div className="flex items-center space-x-1 text-sm text-muted-foreground">
@@ -342,85 +373,74 @@ const CoursesPage = () => {
                         <span>{course.rating}</span>
                       </div>
                     </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-primary mb-2 line-clamp-2">
+                        {course.title}
+                      </h3>
 
-                    <h3 className="text-lg font-bold text-primary mb-2 line-clamp-2">
-                      {course.title}
-                    </h3>
+                      <p className="text-muted-foreground mb-3 leading-relaxed text-sm line-clamp-3">
+                        {course.description}
+                      </p>
 
-                    <p className="text-muted-foreground mb-3 leading-relaxed text-sm line-clamp-3">
-                      {course.description}
-                    </p>
-
-                    <div className="flex items-center justify-between mb-3 text-xs text-muted-foreground">
-                      <div className="flex items-center space-x-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{course.duration}</span>
+                      <div className="flex items-center justify-between mb-3 text-xs text-muted-foreground">
+                        <div className="flex items-center space-x-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{course.duration}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Users className="h-3 w-3" />
+                          <span>{course.students} estudiantes</span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Users className="h-3 w-3" />
-                        <span>{course.students} estudiantes</span>
-                      </div>
-                    </div>
 
-                    {/* Course Features */}
-                    <div className="space-y-2 mb-4">
-                      {course.features
-                        .slice(0, 2)
-                        .map((feature: string, index: number) => (
-                          <div
-                            key={index}
-                            className="flex items-center space-x-2"
-                          >
-                            <CheckCircle className="h-3 w-3 text-primary flex-shrink-0" />
-                            <span className="text-xs text-muted-foreground">
-                              {feature}
-                            </span>
-                          </div>
-                        ))}
-                      {course.features.length > 2 && (
-                        <p className="text-xs text-muted-foreground pl-5">
-                          +{course.features.length - 2} características más
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-3">
-                      {getActionButton(course)}
-
-                      {userState !== "guest" && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className="w-full border-primary/30 text-muted-foreground hover:bg-muted text-xs"
+                      {/* Course Features */}
+                      <div className="space-y-2 mb-4">
+                        {course.features
+                          .slice(0, 2)
+                          .map((feature: string, index: number) => (
+                            <div
+                              key={index}
+                              className="flex items-center space-x-2"
                             >
-                              Ver Detalles del Curso
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Explora más información sobre este curso</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
+                              <CheckCircle className="h-3 w-3 text-primary flex-shrink-0" />
+                              <span className="text-xs text-muted-foreground">
+                                {feature}
+                              </span>
+                            </div>
+                          ))}
+                        {course.features.length > 2 && (
+                          <p className="text-xs text-muted-foreground pl-5">
+                            +{course.features.length - 2} características más
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-auto space-y-3">
+                      {getActionButton(course)}
                     </div>
                   </div>
                 </Card>
-              ))}
+              )})}
               {courseToPay && (
-              <PaypalCheckout
-                course={courseToPay}
-                onClose={() => setCourseToPay(null)}
+                <PaypalCheckout
+                  course={courseToPay}
+                  onClose={() => setCourseToPay(null)}
+                  onSuccess={async () => {
+                    setCourseToPay(null);
+                  }}
+                />
+              )}
+              <AuthDialog
+                open={authDialogOpen}
+                onOpenChange={setAuthDialogOpen}
+                onLogin={() => {
+                  setUserState("logged-in");
+                  setAuthDialogOpen(false);
+                  toast.success(
+                    "¡Bienvenido! Has iniciado sesión correctamente."
+                  );
+                }}
               />
-            )}
-            <AuthDialog
-              open={authDialogOpen}
-              onOpenChange={setAuthDialogOpen}
-              onLogin={() => {
-                setUserState("logged-in");
-                setAuthDialogOpen(false);
-                toast.success("¡Bienvenido! Has iniciado sesión correctamente.");
-              }}
-            />
             </div>
 
             {/* Call to Action */}

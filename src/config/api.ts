@@ -1,1 +1,1 @@
-export const API_URL = "https://pamela-hit-webpage-onto.trycloudflare.com";
+export const API_URL = "https://baking-arctic-electoral-runner.trycloudflare.com";

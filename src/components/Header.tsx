@@ -16,13 +16,18 @@ const Header = () => {
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [bannerVisible, setBannerVisible] = useState(true);
-  
-  if (loading) return null;
+
+  const HeaderSkeleton = () => (
+    <div className="flex items-center space-x-4">
+      <div className="h-10 w-32 bg-muted/40 rounded animate-pulse" />
+      <div className="h-10 w-24 bg-muted/40 rounded animate-pulse" />
+    </div>
+  );
 
   return (
     <header className="fixed top-0 w-full z-50 bg-white dark:bg-slate-900 border-b border-border shadow-lg">
       {/* Banner de verificación compacto (fijo debajo del header para no romper layout) */}
-      {user && user.verified === false && bannerVisible && (
+      {!loading && user && user.verified === false && bannerVisible && (
         <div className="fixed left-0 right-0 top-20 z-40 flex justify-center pointer-events-none">
           <div className="pointer-events-auto max-w-7xl w-full mx-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-md shadow-sm">
             <div className="flex items-center justify-between px-3 py-2 text-sm">
@@ -85,9 +90,12 @@ const Header = () => {
           <a href="/cursos" className="text-foreground hover:text-primary transition-smooth">
             Cursos
           </a>
-          <a href="#videos" className="text-foreground hover:text-primary transition-smooth">
-            Videos
+          <a href="/suscripciones" className="text-foreground hover:text-primary transition-smooth">
+            Suscripciones
           </a>
+          {/* <a href="#videos" className="text-foreground hover:text-primary transition-smooth">
+            Videos
+          </a> */}
           <a href="#contacto" className="text-foreground hover:text-primary transition-smooth">
             Contacto
           </a>
@@ -105,7 +113,9 @@ const Header = () => {
       </div>
       
       <div className="hidden md:flex items-center space-x-4">
-        {user ? (
+        {loading ? (
+          <HeaderSkeleton />
+        ) : user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="lg" className="flex items-center space-x-2">
@@ -121,6 +131,10 @@ const Header = () => {
               <DropdownMenuItem onClick={() => navigate('/mis-cursos')}>
                 <Music className="h-4 w-4 mr-2" />
                 Mis Cursos
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/mis-logros')}>
+                <Music className="h-4 w-4 mr-2" />
+                Mis Logros
               </DropdownMenuItem>
               {isAdmin && (
                 <DropdownMenuItem onClick={() => navigate('/admin')}>
@@ -159,16 +173,24 @@ const Header = () => {
               <button onClick={() => { navigate('/cursos'); setMobileOpen(false); }} className="text-left text-lg font-medium text-foreground hover:text-primary">
                 Cursos
               </button>
-              <a href="#videos" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
+              <button onClick={() => { navigate('/suscripciones'); setMobileOpen(false); }} className="text-left text-lg font-medium text-foreground hover:text-primary">
+                Suscripciones
+              </button>
+              {/* <a href="#videos" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
                 Videos
-              </a>
+              </a> */}
               <a href="#contacto" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
                 Contacto
               </a>
             </nav>
 
             <div className="pt-4 border-t border-border">
-              {user ? (
+              {loading ? (
+                  <div className="space-y-3">
+                    <div className="h-5 w-40 bg-muted/40 rounded animate-pulse" />
+                    <div className="h-5 w-32 bg-muted/40 rounded animate-pulse" />
+                  </div>
+                ) : user ? (
                 <div className="flex flex-col space-y-3">
                   <button onClick={() => { navigate('/perfil'); setMobileOpen(false); }} className="flex items-center space-x-2">
                     <User className="h-5 w-5" />
@@ -177,6 +199,10 @@ const Header = () => {
                   <button onClick={() => { navigate('/mis-cursos'); setMobileOpen(false); }} className="flex items-center space-x-2">
                     <Music className="h-5 w-5" />
                     <span>Mis Cursos</span>
+                  </button>
+                  <button onClick={() => { navigate('/mis-logros'); setMobileOpen(false); }} className="flex items-center space-x-2">
+                    <Music className="h-5 w-5" />
+                    <span>Mis Logros</span>
                   </button>
                   {isAdmin && (
                    <button onClick={() => { navigate('/admin'); setMobileOpen(false); }} className="flex items-center space-x-2">

@@ -42,7 +42,7 @@ export type CourseDetails = {
 };
 
 export async function getCourseDetails(courseId: string): Promise<CourseDetails> {
-  const res = await fetch(`${API_URL}/courses/${courseId}/videos`, {
+  const res = await fetch(`${API_URL}/api/courses/${courseId}/videos`, {
     method: "GET",
     credentials: "include", // 👈 cookies HttpOnly
     headers: { "Content-Type": "application/json" },
@@ -92,4 +92,79 @@ export async function getCourseDetails(courseId: string): Promise<CourseDetails>
       }))
     }))
   };
+}
+
+export type Comment = {
+  id: string;
+  user_id: string;
+  user_name: string;
+  content: string;
+  created_at: string;
+  rating?: number;
+};
+
+export type CourseRating = {
+  average: number;
+  count: number;
+  user_rating?: number;
+};
+
+export async function getLessonComments(lessonId: string): Promise<Comment[]> {
+  const res = await fetch(`${API_URL}/api/courses/${lessonId}/comments`, {
+    method: "GET",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Error al obtener comentarios");
+  }
+
+  return res.json();
+}
+
+export async function createLessonComment(LessonId: string, content: string): Promise<Comment> {
+  const res = await fetch(`${API_URL}/api/courses/${LessonId}/comments`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Error al crear comentario");
+  }
+
+  return res.json();
+}
+
+export async function getCourseRating(courseId: string): Promise<CourseRating> {
+  const res = await fetch(`${API_URL}/api/courses/${courseId}/rating`, {
+    method: "GET",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Error al obtener calificación");
+  }
+
+  return res.json();
+}
+
+export async function rateCourse(courseId: string, rating: number): Promise<void> {
+  const res = await fetch(`${API_URL}/api/courses/${courseId}/rating`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ rating }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Error al calificar curso");
+  }
 }

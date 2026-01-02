@@ -14,6 +14,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { AchievementNotificationProvider } from "@/hooks/useAchievementNotifications";
 
 const queryClient = new QueryClient();
 
@@ -24,10 +25,14 @@ const Index = lazy(() => import("./pages/Index"));
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
 const MyCoursesPage = lazy(() => import("./pages/MyCoursesPage"));
 const CoursePlayerPage = lazy(() => import("./pages/CoursePlayerPage"));
+const CoursePreviewPage = lazy(() => import("./pages/CoursePreviewPage"));
+const SubscriptionsPage = lazy(() => import("./pages/SubscriptionsPage"));
+const MyAchievementsPage = lazy(() => import("./pages/MyAchievementsPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminRoute = lazy(() => import("./components/AdminRoute"));
+const AchievementSystemInitializer = lazy(() => import("./components/AchievementSystemInitializer"));
 
 const paypalOptions = {
   clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID,
@@ -48,43 +53,53 @@ const LoadingScreen = () => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <Suspense fallback={<LoadingScreen />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/cursos" element={
-              <TooltipProvider>
+      <AchievementNotificationProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
+          <Suspense fallback={<LoadingScreen />}>
+            <AchievementSystemInitializer />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/cursos" element={
+                <TooltipProvider>
+                  <PayPalScriptProvider options={paypalOptions}>
+                    <CoursesPage />
+                  </PayPalScriptProvider>
+                </TooltipProvider>
+              } 
+              />
+              <Route path="/mis-cursos" element={<MyCoursesPage />} />
+              <Route path="/mis-logros" element={<MyAchievementsPage />} />
+              <Route path="/suscripciones" element={
                 <PayPalScriptProvider options={paypalOptions}>
-                  <CoursesPage />
+                  <SubscriptionsPage />
                 </PayPalScriptProvider>
-              </TooltipProvider>
-            } 
-            />
-            <Route path="/mis-cursos" element={<MyCoursesPage />} />
-            <Route path="/curso/:courseId" element={<CoursePlayerPage />} />
-            <Route path="/perfil" element={<ProfilePage />} />
+              } />
+              <Route path="/curso/:courseId/preview" element={<CoursePreviewPage />} />
+              <Route path="/curso/:courseId" element={<CoursePlayerPage />} />
+              <Route path="/perfil" element={<ProfilePage />} />
 
-            {/* RUTA CON PROTECCIÓN LAZY */}
-            <Route
-              path="/admin"
-              element={
-                  <AdminRoute>
-                    <AdminPage />
-                  </AdminRoute>
-              }
-            />
+              {/* RUTA CON PROTECCIÓN LAZY */}
+              <Route
+                path="/admin"
+                element={
+                    <AdminRoute>
+                      <AdminPage />
+                    </AdminRoute>
+                }
+              />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </AchievementNotificationProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

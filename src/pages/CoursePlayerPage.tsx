@@ -30,18 +30,9 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 // Importar los tipos actualizados
-import { CourseDetails, getCourseDetails, Lesson, Module } from "@/api/courses"; 
+import { CourseDetails, getCourseDetails, Lesson, Module, Comment, getLessonComments, createLessonComment, CourseRating, getCourseRating, rateCourse } from "@/api/courses"; 
 import { API_URL } from "@/config/api";
-
-interface Comment {
-  id: string;
-  user: string;
-  avatar: string;
-  content: string;
-  timestamp: string;
-  likes: number;
-  replies?: Comment[];
-}
+import { checkLessonCompletion, checkCourseCompletion } from "@/lib/achievementSystem";
 
 // --- Componente de Renderizado de Contenido de la Lección ---
 interface LessonContentRendererProps {
@@ -192,35 +183,23 @@ const CoursePlayerPage = () => {
   const [newComment, setNewComment] = useState('');
   const [courseData, setCourseData] = useState<CourseDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  // ... (Comentarios de ejemplo) ...
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: '1',
-      user: 'María González',
-      avatar: '👩',
-      content: 'Excelente explicación sobre las escalas básicas. Me ayudó mucho a entender la digitación.',
-      timestamp: 'hace 2 horas',
-      likes: 12
-    },
-    {
-      id: '2',
-      user: 'Carlos Ruiz',
-      avatar: '👨',
-      content: '¿Podrían explicar un poco más sobre el acompañamiento en esta lección?',
-      timestamp: 'hace 5 horas',
-      likes: 3
-    }
-  ]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [courseRating, setCourseRating] = useState<CourseRating | null>(null);
+  const [userRating, setUserRating] = useState<number | null>(null);
+  const [loadingComments, setLoadingComments] = useState(false);
   
   // Lógica de carga de datos
 useEffect(() => {
   if (!courseId) return;
   setLoading(true);
-
-  getCourseDetails(courseId)
-    .then((data) => {
+  Promise.all([
+    getCourseDetails(courseId),
+    getCourseRating(courseId).catch(() => null), // Rating opcional
+  ])
+    .then(([data, ratingData]) => {
       setCourseData(data);
+      setCourseRating(ratingData);
+      setUserRating(ratingData?.user_rating || null);
 
       // Buscar la primera lección no completada
       const firstIncompleteLesson = data.modules
@@ -237,7 +216,8 @@ useEffect(() => {
           .slice(-1)[0];
 
       setCurrentLesson(initialLesson || null); // null si no hay lecciones
-    })
+    }
+  )
     .catch((err) => {
       const errorMessage = err.message || "Error desconocido al obtener el curso.";
       if (errorMessage.includes("Permission denied") || errorMessage.includes("403")) {
@@ -250,6 +230,16 @@ useEffect(() => {
     .finally(() => setLoading(false));
 }, [courseId, navigate, toast]);
 
+useEffect(() => {
+  if (!currentLesson) return;
+
+  setLoadingComments(true);
+
+  getLessonComments(currentLesson.id)
+    .then(setComments)
+    .catch(() => setComments([]))
+    .finally(() => setLoadingComments(false));
+}, [currentLesson]);
 
   const toggleModule = (moduleId: string) => {
     setExpandedModules(prev => 
@@ -319,6 +309,15 @@ useEffect(() => {
         };
       });
     
+    // Verificar logros
+    await checkLessonCompletion(lessonId);
+    
+    // Verificar si el curso se completó
+    const updatedData = courseData; // Usar el estado actualizado
+    if (updatedData && updatedData.completed_lessons + 1 >= updatedData.total_lessons) {
+      await checkCourseCompletion(courseId);
+    }
+    
     toast({
       title: "¡Lección completada!",
       description: "Has completado esta lección exitosamente.",
@@ -332,7 +331,50 @@ useEffect(() => {
     }
   };
 
-  const addComment = () => { /* ... lógica de comentarios ... */ };
+  const addComment = async () => {
+    if (!newComment.trim() || !courseId) return;
+
+    setLoadingComments(true);
+    try {
+      const comment = await createLessonComment(currentLesson.id, newComment.trim());
+      setComments(prev => [comment, ...prev]);
+      setNewComment('');
+      toast({
+        title: "Comentario agregado",
+        description: "Tu comentario ha sido publicado.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `No se pudo agregar el comentario: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handleRating = async (rating: number) => {
+    if (!courseId) return;
+
+    try {
+      await rateCourse(courseId, rating);
+      setUserRating(rating);
+      // Recargar rating para actualizar el promedio
+      const newRating = await getCourseRating(courseId);
+      setCourseRating(newRating);
+      toast({
+        title: "Calificación enviada",
+        description: "Gracias por calificar el curso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `No se pudo enviar la calificación: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
 
   // Cálculo de progreso
   const getProgressPercentage = useMemo(() => {
@@ -359,7 +401,8 @@ useEffect(() => {
         <p className="text-lg text-muted-foreground">Cargando contenido del curso...</p>
     </div>
   ); 
-  if (!courseData) return <div className="flex min-h-screen items-center justify-center bg-gray-100">
+  if (!courseData) return 
+  <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="text-center">
         <h1 className="mb-4 text-4xl font-bold">404</h1>
         <p className="mb-4 text-xl text-gray-600">Oops! Page not found</p>
@@ -369,9 +412,41 @@ useEffect(() => {
       </div>
     </div>;
   if (!currentLesson) return (
-    <div className="p-10 text-center">
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate(-1)}
+              className="text-muted-foreground hover:text-primary"
+            >
+              ← Volver
+            </Button>
+            <Separator orientation="vertical" className="h-6" />
+            <div>
+              <h1 className="font-semibold text-lg">{courseData.title}</h1>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <div className="text-sm font-medium">
+                {courseData.completed_lessons} de {courseData.total_lessons} lecciones
+                <Progress value={getProgressPercentage} className="w-32" />
+              </div>
+            </div>
+            <Badge variant="secondary">
+              {getProgressPercentage}% completado
+            </Badge>
+          </div>
+        </div>
+      </header>
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <div className="text-center">
         <h2 className="text-2xl font-bold">{courseData.title}</h2>
         <p className="text-lg text-muted-foreground mt-2">Este curso no tiene lecciones para mostrar.</p>
+      </div>
+      </div>
     </div>
   );
 
@@ -529,6 +604,56 @@ useEffect(() => {
             {/* Sección de Comentarios */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Star className="h-5 w-5 mr-2" />
+                Calificación del Curso
+              </h3>
+              
+              {courseRating && (
+                <div className="mb-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-5 w-5 ${
+                            star <= courseRating.average
+                              ? 'text-yellow-400 fill-current'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {courseRating.average.toFixed(1)} ({courseRating.count} calificaciones)
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm">Tu calificación:</span>
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => handleRating(star)}
+                          className="focus:outline-none"
+                        >
+                          <Star
+                            className={`h-5 w-5 ${
+                              star <= (userRating || 0)
+                                ? 'text-yellow-400 fill-current'
+                                : 'text-gray-300 hover:text-yellow-400'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <Separator className="my-4" />
+              
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <MessageCircle className="h-5 w-5 mr-2" />
                 Comentarios y Discusión
               </h3>
@@ -541,8 +666,8 @@ useEffect(() => {
                   onChange={(e) => setNewComment(e.target.value)}
                   className="mb-3"
                 />
-                <Button onClick={addComment} disabled={!newComment.trim()}>
-                  Publicar Comentario
+                <Button onClick={addComment} disabled={!newComment.trim() || loadingComments}>
+                  {loadingComments ? "Publicando..." : "Publicar Comentario"}
                 </Button>
               </div>
 
@@ -550,21 +675,29 @@ useEffect(() => {
               <div className="space-y-4">
                 {comments.map((comment) => (
                   <div key={comment.id} className="flex space-x-3 p-4 rounded-lg bg-muted/30">
-                    <div className="text-2xl">{comment.avatar}</div>
+                    <div className="text-2xl">👤</div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-medium text-sm">{comment.user}</span>
-                        <span className="text-xs text-muted-foreground">{comment.timestamp}</span>
+                        <span className="font-medium text-sm">{comment.user_name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(comment.created_at).toLocaleDateString()}
+                        </span>
+                        {comment.rating && (
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-3 w-3 ${
+                                  star <= comment.rating!
+                                    ? 'text-yellow-400 fill-current'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2">{comment.content}</p>
-                      <div className="flex items-center space-x-4">
-                        <Button variant="ghost" size="sm" className="h-6 px-2">
-                          👍 {comment.likes}
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-6 px-2">
-                          Responder
-                        </Button>
-                      </div>
+                      <p className="text-sm text-muted-foreground">{comment.content}</p>
                     </div>
                   </div>
                 ))}

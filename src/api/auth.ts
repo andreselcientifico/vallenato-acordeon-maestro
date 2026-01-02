@@ -1,7 +1,7 @@
 import { API_URL } from "@/config/api";
 
 export async function loginUser(email: string, password: string) {
-  const res = await fetch(`${API_URL}/login`, {
+  const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -18,7 +18,7 @@ export async function loginUser(email: string, password: string) {
 
 export async function getCurrentUser() {
   try {
-    const res = await fetch(`${API_URL}/users/me`, {
+    const res = await fetch(`${API_URL}/api/users/me`, {
       method: "GET",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -45,7 +45,7 @@ export async function getCurrentUser() {
 }
 
 export async function registerUser(name: string, email: string, password: string, confirmPassword: string) {
-  const res = await fetch(`${API_URL}/register`, {
+  const res = await fetch(`${API_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, email, password, confirmPassword }),

@@ -3,8 +3,8 @@ import { API_URL } from "@/config/api";
 export async function saveCourseAPI(course, courseId: string | undefined) {
   const method = courseId ? "PUT" : "POST";
   const url = courseId
-    ? `${API_URL}/courses/${courseId}`
-    : `${API_URL}/courses`;
+    ? `${API_URL}/api/courses/${courseId}`
+    : `${API_URL}/api/courses`;
 
   const res = await fetch(url, {
     method,
@@ -22,7 +22,7 @@ export async function saveCourseAPI(course, courseId: string | undefined) {
 }
 
 export async function fetchCoursesAPI() {
-  const res = await fetch(`${API_URL}/courses/videos`, {
+  const res = await fetch(`${API_URL}/api/courses/videos`, {
     method: "GET",
     credentials: "include",
     headers: {
@@ -39,7 +39,7 @@ export async function fetchCoursesAPI() {
 }
 
 export async function fetchCourses_API() {
-  const res = await fetch(`${API_URL}/courses`, {
+  const res = await fetch(`${API_URL}/api/courses`, {
     method: "GET",
     credentials: "include",
     headers: {
@@ -59,7 +59,7 @@ export async function fetchCourses_API() {
 }
 
 export async function deleteCourseAPI(courseId) {
-  const res = await fetch(`${API_URL}/courses/${courseId}`, {
+  const res = await fetch(`${API_URL}/api/courses/${courseId}`, {
     method: "DELETE",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

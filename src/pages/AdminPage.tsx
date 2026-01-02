@@ -16,12 +16,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, ArrowLeft, Save, Eye, GripVertical, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2, Plus, ArrowLeft, Save, Eye, GripVertical, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { saveCourseAPI, fetchCoursesAPI, deleteCourseAPI } from "@/api/admin";
 import CoursesPage from "./CoursesPage";
 import { normalize } from "path";
 import * as yup from 'yup';
+import {
+  getSubscriptionPlans,
+  createSubscriptionPlan,
+  updateSubscriptionPlan,
+  deleteSubscriptionPlan,
+  getAchievements,
+  createAchievement,
+  updateAchievement,
+  deleteAchievement,
+  SubscriptionPlan,
+  Achievement
+} from "@/api/subscriptions";
 
 // ----------------------------------------------------------------------
 // INTERFACES (Adaptadas al Backend Rust)
@@ -132,6 +144,31 @@ const AdminPage = () => {
   // Control de acordeón visual para módulos
   const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set([0]));
 
+  // Estado para suscripciones
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
+  const [currentSubscriptionPlan, setCurrentSubscriptionPlan] = useState<Partial<SubscriptionPlan>>({
+    name: "",
+    description: "",
+    price: 0,
+    duration_months: 1,
+    features: [],
+    paypal_plan_id: "",
+    active: true,
+  });
+  const [editingSubscriptionPlan, setEditingSubscriptionPlan] = useState<string | null>(null);
+
+  // Estado para logros
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [currentAchievement, setCurrentAchievement] = useState<Partial<Achievement>>({
+    name: "",
+    description: "",
+    icon: "",
+    trigger_type: "course_completed",
+    trigger_value: 1,
+    active: true,
+  });
+  const [editingAchievement, setEditingAchievement] = useState<string | null>(null);
+
   const toggleModule = (index: number) => {
     const newSet = new Set(expandedModules);
     if (newSet.has(index)) newSet.delete(index);
@@ -147,6 +184,17 @@ const AdminPage = () => {
       loadCoursesFromDB();
     }
   }, [search]);
+
+  // ----------------------------------------------------------------------
+  // LOAD SUBSCRIPTION PLANS AND ACHIEVEMENTS
+  // ----------------------------------------------------------------------
+  useEffect(() => {
+    if (activeTab === "subscriptions") {
+      loadSubscriptionPlans();
+    } else if (activeTab === "achievements") {
+      loadAchievements();
+    }
+  }, [activeTab]);
 
   // ----------------------------------------------------------------------
   // FILTER COURSES
@@ -257,6 +305,157 @@ const AdminPage = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // ----------------------------------------------------------------------
+  // SUBSCRIPTION MANAGEMENT
+  // ----------------------------------------------------------------------
+  const loadSubscriptionPlans = async () => {
+    try {
+      const plans = await getSubscriptionPlans();
+      setSubscriptionPlans(plans);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los planes de suscripción",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const saveSubscriptionPlan = async () => {
+    try {
+      if (!currentSubscriptionPlan.name || !currentSubscriptionPlan.paypal_plan_id) {
+        toast({
+          title: "Error",
+          description: "Por favor completa los campos obligatorios",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (editingSubscriptionPlan) {
+        await updateSubscriptionPlan(editingSubscriptionPlan, currentSubscriptionPlan as SubscriptionPlan);
+        toast({ title: "Éxito", description: "Plan de suscripción actualizado correctamente" });
+      } else {
+        await createSubscriptionPlan(currentSubscriptionPlan as Omit<SubscriptionPlan, 'id' | 'created_at'>);
+        toast({ title: "Éxito", description: "Plan de suscripción creado correctamente" });
+      }
+
+      await loadSubscriptionPlans();
+      resetSubscriptionForm();
+      setActiveTab("subscriptions");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el plan de suscripción",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteSubscriptionPlan = async (planId: string) => {
+    if (!confirm("¿Estás seguro de que quieres eliminar este plan de suscripción?")) return;
+
+    try {
+      await deleteSubscriptionPlan(planId);
+      await loadSubscriptionPlans();
+      toast({ title: "Éxito", description: "Plan de suscripción eliminado correctamente" });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el plan de suscripción",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetSubscriptionForm = () => {
+    setCurrentSubscriptionPlan({
+      name: "",
+      description: "",
+      price: 0,
+      duration_months: 1,
+      features: [],
+      paypal_plan_id: "",
+      active: true,
+    });
+    setEditingSubscriptionPlan(null);
+  };
+
+  // ----------------------------------------------------------------------
+  // ACHIEVEMENT MANAGEMENT
+  // ----------------------------------------------------------------------
+  const loadAchievements = async () => {
+    try {
+      const achievementsData = await getAchievements();
+      setAchievements(achievementsData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los logros",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const saveAchievement = async () => {
+    try {
+      if (!currentAchievement.name || !currentAchievement.trigger_type) {
+        toast({
+          title: "Error",
+          description: "Por favor completa los campos obligatorios",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (editingAchievement) {
+        await updateAchievement(editingAchievement, currentAchievement as Achievement);
+        toast({ title: "Éxito", description: "Logro actualizado correctamente" });
+      } else {
+        await createAchievement(currentAchievement as Omit<Achievement, 'id' | 'created_at'>);
+        toast({ title: "Éxito", description: "Logro creado correctamente" });
+      }
+
+      await loadAchievements();
+      resetAchievementForm();
+      setActiveTab("achievements");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el logro",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteAchievement = async (achievementId: string) => {
+    if (!confirm("¿Estás seguro de que quieres eliminar este logro?")) return;
+
+    try {
+      await deleteAchievement(achievementId);
+      await loadAchievements();
+      toast({ title: "Éxito", description: "Logro eliminado correctamente" });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el logro",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetAchievementForm = () => {
+    setCurrentAchievement({
+      name: "",
+      description: "",
+      icon: "",
+      trigger_type: "course_completed",
+      trigger_value: 1,
+      active: true,
+    });
+    setEditingAchievement(null);
   };
 
   // ----------------------------------------------------------------------
@@ -468,10 +667,10 @@ const AdminPage = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b border-border">
-        <div className="container mx-auto px-4 py-4">
+      <header className="bg-card border-b border-border w-full">
+        <div className="container mx-auto px-2 py-2 md:px-4 md:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center md:gap-4">
               <Button
                 variant="ghost"
                 size="sm"
@@ -481,7 +680,7 @@ const AdminPage = () => {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Volver
               </Button>
-              <h1 className="text-2xl font-bold text-vallenato-red">
+              <h1 className="text-xl sm:text-2xl font-bold text-vallenato-red">
                 Panel de Administración
               </h1>
             </div>
@@ -491,11 +690,19 @@ const AdminPage = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full h-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
             <TabsTrigger value="create">
               {editingCourse ? "Editar Curso" : "Crear Curso"}
             </TabsTrigger>
             <TabsTrigger value="manage">Gestionar Cursos</TabsTrigger>
+            <TabsTrigger value="create-subscription">
+              {editingSubscriptionPlan ? "Editar Plan" : "Crear Plan"}
+            </TabsTrigger>
+            <TabsTrigger value="subscriptions">Planes</TabsTrigger>
+            <TabsTrigger value="create-achievement">
+              {editingAchievement ? "Editar Logro" : "Crear Logro"}
+            </TabsTrigger>
+            <TabsTrigger value="achievements">Logros</TabsTrigger>
           </TabsList>
 
           {/* CREAR / EDITAR CURSO */}
@@ -882,6 +1089,331 @@ const AdminPage = () => {
                     ))}
                     </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* SUBSCRIPTIONS TAB */}
+          <TabsContent value="subscriptions" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Planes de Suscripción</span>
+                  <Button onClick={() => { resetSubscriptionForm(); setActiveTab("create-subscription"); }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Crear Plan
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {subscriptionPlans.map((plan) => (
+                    <Card key={plan.id} className="relative">
+                      <CardHeader>
+                        <CardTitle className="text-lg">{plan.name}</CardTitle>
+                        <div className="text-2xl font-bold text-primary">
+                          ${plan.price}
+                          <span className="text-sm font-normal text-muted-foreground">
+                            /{plan.duration_months} {plan.duration_months === 1 ? 'mes' : 'meses'}
+                          </span>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
+                        <div className="space-y-2 mb-4">
+                          {plan.features.map((feature, index) => (
+                            <div key={index} className="flex items-center text-sm">
+                              <Check className="h-4 w-4 text-green-500 mr-2" />
+                              {feature}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                              setCurrentSubscriptionPlan(plan);
+                              setEditingSubscriptionPlan(plan.id);
+                              setActiveTab("create-subscription");
+                            }}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteSubscriptionPlan(plan.id)}
+                            className="text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ACHIEVEMENTS TAB */}
+          <TabsContent value="achievements" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Logros</span>
+                  <Button onClick={() => { resetAchievementForm(); setActiveTab("create-achievement"); }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Crear Logro
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {achievements.map((achievement) => (
+                    <Card key={achievement.id} className="relative">
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center">
+                          {achievement.icon && <span className="mr-2">{achievement.icon}</span>}
+                          {achievement.name}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className="font-medium">Tipo de activación:</span> {achievement.trigger_type}
+                          </div>
+                          <div>
+                            <span className="font-medium">Valor requerido:</span> {achievement.trigger_value}
+                          </div>
+                          <div>
+                            <span className="font-medium">Estado:</span>{" "}
+                            <Badge variant={achievement.active ? "default" : "secondary"}>
+                              {achievement.active ? "Activo" : "Inactivo"}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                              setCurrentAchievement(achievement);
+                              setEditingAchievement(achievement.id);
+                              setActiveTab("create-achievement");
+                            }}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteAchievement(achievement.id)}
+                            className="text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* CREATE SUBSCRIPTION PLAN TAB */}
+          <TabsContent value="create-subscription" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {editingSubscriptionPlan ? "Editar Plan de Suscripción" : "Crear Plan de Suscripción"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Nombre *</Label>
+                    <Input
+                      value={currentSubscriptionPlan.name}
+                      onChange={(e) => setCurrentSubscriptionPlan({ ...currentSubscriptionPlan, name: e.target.value })}
+                      placeholder="Plan Premium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Precio *</Label>
+                    <Input
+                      type="number"
+                      value={currentSubscriptionPlan.price}
+                      onChange={(e) => setCurrentSubscriptionPlan({ ...currentSubscriptionPlan, price: parseFloat(e.target.value) || 0 })}
+                      placeholder="29.99"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Duración (meses)</Label>
+                    <Input
+                      type="number"
+                      value={currentSubscriptionPlan.duration_months}
+                      onChange={(e) => setCurrentSubscriptionPlan({ ...currentSubscriptionPlan, duration_months: parseInt(e.target.value) || 1 })}
+                      placeholder="1"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>ID del Plan PayPal *</Label>
+                    <Input
+                      value={currentSubscriptionPlan.paypal_plan_id}
+                      onChange={(e) => setCurrentSubscriptionPlan({ ...currentSubscriptionPlan, paypal_plan_id: e.target.value })}
+                      placeholder="P-XXXXXXXXXXXXXXXXX"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Descripción</Label>
+                  <Textarea
+                    value={currentSubscriptionPlan.description}
+                    onChange={(e) => setCurrentSubscriptionPlan({ ...currentSubscriptionPlan, description: e.target.value })}
+                    placeholder="Descripción del plan..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Características</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newFeature}
+                      onChange={(e) => setNewFeature(e.target.value)}
+                      placeholder="Acceso ilimitado a cursos"
+                      onKeyPress={(e) => e.key === "Enter" && addFeature()}
+                    />
+                    <Button onClick={addFeature} variant="outline" size="icon">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {currentSubscriptionPlan.features?.map((feature, index) => (
+                      <Badge key={index} variant="secondary" className="gap-2 pl-3">
+                        {feature}
+                        <Trash2
+                          className="h-3 w-3 cursor-pointer hover:text-destructive"
+                          onClick={() => removeFeature(index)}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="active"
+                    checked={currentSubscriptionPlan.active}
+                    onChange={(e) => setCurrentSubscriptionPlan({ ...currentSubscriptionPlan, active: e.target.checked })}
+                  />
+                  <Label htmlFor="active">Plan activo</Label>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={saveSubscriptionPlan}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {editingSubscriptionPlan ? "Actualizar" : "Crear"} Plan
+                  </Button>
+                  <Button variant="outline" onClick={() => setActiveTab("subscriptions")}>
+                    Cancelar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* CREATE ACHIEVEMENT TAB */}
+          <TabsContent value="create-achievement" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {editingAchievement ? "Editar Logro" : "Crear Logro"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Nombre *</Label>
+                    <Input
+                      value={currentAchievement.name}
+                      onChange={(e) => setCurrentAchievement({ ...currentAchievement, name: e.target.value })}
+                      placeholder="Primer Curso Completado"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ícono</Label>
+                    <Input
+                      value={currentAchievement.icon}
+                      onChange={(e) => setCurrentAchievement({ ...currentAchievement, icon: e.target.value })}
+                      placeholder="🏆"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tipo de activación *</Label>
+                    <Select
+                      value={currentAchievement.trigger_type}
+                      onValueChange={(value) => setCurrentAchievement({ ...currentAchievement, trigger_type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="course_completed">Curso completado</SelectItem>
+                        <SelectItem value="lesson_completed">Lección completada</SelectItem>
+                        <SelectItem value="login_streak">Racha de logins</SelectItem>
+                        <SelectItem value="courses_enrolled">Cursos inscritos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Valor requerido</Label>
+                    <Input
+                      type="number"
+                      value={currentAchievement.trigger_value}
+                      onChange={(e) => setCurrentAchievement({ ...currentAchievement, trigger_value: parseInt(e.target.value) || 1 })}
+                      placeholder="1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Descripción</Label>
+                  <Textarea
+                    value={currentAchievement.description}
+                    onChange={(e) => setCurrentAchievement({ ...currentAchievement, description: e.target.value })}
+                    placeholder="Descripción del logro..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="achievement-active"
+                    checked={currentAchievement.active}
+                    onChange={(e) => setCurrentAchievement({ ...currentAchievement, active: e.target.checked })}
+                  />
+                  <Label htmlFor="achievement-active">Logro activo</Label>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={saveAchievement}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {editingAchievement ? "Actualizar" : "Crear"} Logro
+                  </Button>
+                  <Button variant="outline" onClick={() => setActiveTab("achievements")}>
+                    Cancelar
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
