@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { Trophy, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Achievement } from "@/api/subscriptions";
+import { UserAchievement } from "@/api/subscriptions";
 
 interface AchievementNotificationProps {
-  achievement: Achievement;
+  achievement: UserAchievement;
   onClose: () => void;
   autoHide?: boolean;
   autoHideDelay?: number;

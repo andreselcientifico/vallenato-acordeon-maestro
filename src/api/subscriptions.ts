@@ -28,23 +28,8 @@ export interface SubscriptionPlan {
   created_at: string;
 }
 
-export async function getSubscriptions(): Promise<Subscription[]> {
-  const res = await fetch(`${API_URL}/api/admin/subscriptions`, {
-    method: "GET",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Error al obtener suscripciones");
-  }
-
-  return res.json();
-}
-
 export async function createSubscriptionPlan(plan: Omit<SubscriptionPlan, 'id' | 'created_at'>): Promise<SubscriptionPlan> {
-  const res = await fetch(`${API_URL}/api/admin/subscription-plans`, {
+  const res = await fetch(`${API_URL}/api/subscriptions/plans`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -60,7 +45,7 @@ export async function createSubscriptionPlan(plan: Omit<SubscriptionPlan, 'id' |
 }
 
 export async function updateSubscriptionPlan(planId: string, plan: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> {
-  const res = await fetch(`${API_URL}/api/admin/subscription-plans/${planId}`, {
+  const res = await fetch(`${API_URL}/api/subscriptions/plans/${planId}`, {
     method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -76,7 +61,7 @@ export async function updateSubscriptionPlan(planId: string, plan: Partial<Subsc
 }
 
 export async function deleteSubscriptionPlan(planId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/api/admin/subscription-plans/${planId}`, {
+  const res = await fetch(`${API_URL}/api/subscriptions/plans/${planId}`, {
     method: "DELETE",
     credentials: "include",
   });
@@ -88,7 +73,7 @@ export async function deleteSubscriptionPlan(planId: string): Promise<void> {
 }
 
 export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-  const res = await fetch(`${API_URL}/api/subscription-plans`, {
+  const res = await fetch(`${API_URL}/auth/plans/subscriptions`, {
     method: "GET",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -102,31 +87,53 @@ export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   return res.json();
 }
 
+export async function getUserSubscriptions(): Promise<Subscription[]> {
+  const res = await fetch(`${API_URL}/api/subscriptions/user`, {
+    method: "GET",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Error al obtener suscripciones del usuario");
+  }
+
+  return res.json();
+}
+
+export async function cancelSubscription(subscriptionId: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/subscriptions/${subscriptionId}/cancel`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Error al cancelar suscripción");
+  }
+}
+
 // =====================
 // LOGROS
 // =====================
 
-export interface Achievement {
+export interface UserAchievement {
   id: string;
   name: string;
   description?: string;
   icon?: string;
-  created_at: string;
-  trigger_type: string; // 'course_completed', 'lesson_completed', 'login_streak', etc.
-  trigger_value: number; // cantidad necesaria para activar
+  trigger_type: string;
+  trigger_value: number;
   active: boolean;
-}
-
-export interface UserAchievement {
-  id: string;
-  user_id: string;
-  achievement_id: string;
   earned: boolean;
-  earned_at?: string;
+  earned_at?: string | null;
+  created_at: string;
 }
 
-export async function getAchievements(): Promise<Achievement[]> {
-  const res = await fetch(`${API_URL}/api/admin/achievements`, {
+export async function getAchievements(): Promise<UserAchievement[]> {
+  const res = await fetch(`${API_URL}/api/achievements`, {
     method: "GET",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -136,12 +143,13 @@ export async function getAchievements(): Promise<Achievement[]> {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || "Error al obtener logros");
   }
-
-  return res.json();
+  const data = await res.json();
+  console.log(data);
+  return data;
 }
 
-export async function createAchievement(achievement: Omit<Achievement, 'id' | 'created_at'>): Promise<Achievement> {
-  const res = await fetch(`${API_URL}/api/admin/achievements`, {
+export async function createAchievement(achievement: Omit<UserAchievement, 'id' | 'created_at'>): Promise<UserAchievement> {
+  const res = await fetch(`${API_URL}/api/achievements`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -156,8 +164,8 @@ export async function createAchievement(achievement: Omit<Achievement, 'id' | 'c
   return res.json();
 }
 
-export async function updateAchievement(achievementId: string, achievement: Partial<Achievement>): Promise<Achievement> {
-  const res = await fetch(`${API_URL}/api/admin/achievements/${achievementId}`, {
+export async function updateAchievement(achievementId: string, achievement: Partial<UserAchievement>): Promise<UserAchievement> {
+  const res = await fetch(`${API_URL}/api/achievements/${achievementId}`, {
     method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -173,7 +181,7 @@ export async function updateAchievement(achievementId: string, achievement: Part
 }
 
 export async function deleteAchievement(achievementId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/api/admin/achievements/${achievementId}`, {
+  const res = await fetch(`${API_URL}/api/achievements/${achievementId}`, {
     method: "DELETE",
     credentials: "include",
   });
@@ -185,7 +193,7 @@ export async function deleteAchievement(achievementId: string): Promise<void> {
 }
 
 export async function getUserAchievements(userId: string): Promise<UserAchievement[]> {
-  const res = await fetch(`${API_URL}/api/users/${userId}/achievements`, {
+  const res = await fetch(`${API_URL}/api/achievements/users/${userId}`, {
     method: "GET",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -195,12 +203,13 @@ export async function getUserAchievements(userId: string): Promise<UserAchieveme
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || "Error al obtener logros del usuario");
   }
-
-  return res.json();
+  const data = await res.json();  
+  console.log(data);
+  return data;
 }
 
 export async function checkAndAwardAchievements(userId: string, action: string, value?: number): Promise<UserAchievement[]> {
-  const res = await fetch(`${API_URL}/api/users/${userId}/achievements/check`, {
+  const res = await fetch(`${API_URL}/api/achievements/users/${userId}/check`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -211,8 +220,9 @@ export async function checkAndAwardAchievements(userId: string, action: string, 
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || "Error al verificar logros");
   }
-
-  return res.json();
+  const data = await res.json();
+  console.log(data);
+  return data;
 }
 
 // =====================

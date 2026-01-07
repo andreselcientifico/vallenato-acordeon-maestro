@@ -29,10 +29,12 @@ import {
 } from "@/components/ui/tooltip";
 import { fetchCourses_API } from "@/api/admin";
 import { getCurrentUser } from "@/api/auth";
+import { getUserSubscriptions, Subscription } from "@/api/subscriptions";
 import { toast } from "sonner";
 import PaypalCheckout from "@/components/Paypalbutton";
 import AuthDialog from "@/components/AuthDialog";
 import { API_URL } from "@/config/api";
+import { CourseRating, getCourseRating } from "@/api/courses";
 
 type UserState = "guest" | "logged-in";
 
@@ -57,6 +59,22 @@ const CoursesPage = () => {
   >("all");
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [loadingAccess, setLoadingAccess] = useState(true);
+  const [courseRatings, setCourseRatings] = useState<Record<string, CourseRating>>({});
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<Subscription | null>(null);
+
+  const loadPurchasedCourses = async () => {
+    const response = await fetch(`${API_URL}/api/mycourses`, {
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("No se pudieron cargar los cursos comprados");
+    }
+
+    const data = await response.json();
+    setPurchasedCourses(new Set(data.courseIds));
+  };
 
   // Verificar autenticación
   useEffect(() => {
@@ -71,16 +89,28 @@ const CoursesPage = () => {
 
         setUserState("logged-in");
 
-        const response = await fetch(`${API_URL}/api/mycourses`, {
-          credentials: "include",
-        });
+        await loadPurchasedCourses();
 
-        if (!response.ok) {
-          throw new Error("No se pudieron cargar los cursos comprados");
+        // Verificar si tiene suscripción activa o cancelada pero no expirada
+        try {
+          const subs = await getUserSubscriptions();
+          const now = new Date();
+          const hasValidSubscription = subs.some(sub => 
+            sub.status === true || (sub.status === false && sub.end_time && new Date(sub.end_time) > now)
+          );
+          setHasActiveSubscription(hasValidSubscription);
+          
+          // Guardar información de suscripción para mostrar mensajes
+          const activeSub = subs.find(sub => sub.status === true);
+          const expiredCancelledSub = subs.find(sub => 
+            sub.status === false && sub.end_time && new Date(sub.end_time) > now
+          );
+          setSubscriptionInfo(activeSub || expiredCancelledSub);
+        } catch (error) {
+          console.warn("Error checking subscriptions:", error);
+          setHasActiveSubscription(false);
+          setSubscriptionInfo(null);
         }
-
-        const data = await response.json();
-        setPurchasedCourses(new Set(data.courseIds));
       } catch {
         setUserState("guest");
       } finally {
@@ -104,6 +134,33 @@ const CoursesPage = () => {
 
     loadCourses();
   }, []);
+
+  useEffect(() => {
+  const loadRatings = async () => {
+    const ratings: Record<string, CourseRating> = {};
+
+    await Promise.all(
+      courses.map(async (course) => {
+        try {
+          const rating = await getCourseRating(course.id);
+          ratings[course.id] = rating;
+        } catch {
+          ratings[course.id] = {
+            average: 0,
+            count: 0,
+            user_rating: null,
+          };
+        }
+      })
+    );
+
+    setCourseRatings(ratings);
+  };
+
+  if (courses.length > 0) {
+    loadRatings();
+  }
+}, [courses]);
 
   const CourseCategoryBadge = ({ category }: { category: "premium" | "básico" }) => {
     if (category === "premium") {
@@ -146,7 +203,7 @@ const CoursesPage = () => {
       );
     }
 
-    if (purchasedCourses.has(course.id)) {
+    if (purchasedCourses.has(course.id) || hasActiveSubscription) {
       return (
         <Button
           variant="hero"
@@ -204,10 +261,12 @@ const CoursesPage = () => {
       (course) => filterCategory === "all" || course.category === filterCategory
     )
     .filter((course) => filterLevel === "all" || course.level === filterLevel)
-    .filter(
-      (course) =>
-        filterRating === "all" || course.rating >= parseInt(filterRating)
-    );
+    .filter((course) => {
+      if (filterRating === "all") return true;
+
+      const rating = courseRatings[course.id]?.average ?? 0;
+      return rating >= parseInt(filterRating);
+    });
 
   return (
     <div className="min-h-screen">
@@ -370,7 +429,16 @@ const CoursesPage = () => {
                       </div>
                       <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                         <Star className="h-4 w-4 fill-current text-yellow-500" />
-                        <span>{course.rating}</span>
+                        <span>
+                          {
+                            courseRatings[course.id]
+                            ? courseRatings[course.id].average.toFixed(1)
+                            : "0.0"
+                          }
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          ({courseRatings[course.id]?.count ?? 0})
+                        </span>
                       </div>
                     </div>
                     <div>
@@ -426,7 +494,13 @@ const CoursesPage = () => {
                   course={courseToPay}
                   onClose={() => setCourseToPay(null)}
                   onSuccess={async () => {
-                    setCourseToPay(null);
+                    try {
+                      await loadPurchasedCourses();
+
+                      toast.success("¡Curso comprado con éxito! 🎉");
+                    } finally {
+                      setCourseToPay(null);
+                    }
                   }}
                 />
               )}

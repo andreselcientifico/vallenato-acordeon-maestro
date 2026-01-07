@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Music, User, LogOut, Menu, X } from "lucide-react";
+import { Music, User, LogOut, Menu, X, Crown } from "lucide-react";
 import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import AuthDialog from "./AuthDialog";
 import valenatoLogo from "@/assets/vallenato-logo.webp";
 import { useAuth } from "@/context/AuthContext";
 import { sendEmail } from "@/api/email";
+import { getUserSubscriptions } from "@/api/subscriptions";
+import { getRandomAvatar } from "@/lib/avatars";
 
-const Header = () => {
+const Header = memo(() => {
   const navigate = useNavigate();
   const { user, login, logout, loading } = useAuth();
   const isAdmin = Boolean(user && (user.role === "Admin" || (user as any).isAdmin));
@@ -16,6 +19,47 @@ const Header = () => {
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [bannerVisible, setBannerVisible] = useState(true);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<{
+    hasValidSubscription: boolean;
+    isActive: boolean;
+    endDate?: Date;
+  }>({ hasValidSubscription: false, isActive: false });
+
+  useEffect(() => {
+    const loadSubscriptionStatus = async () => {
+      if (!user) {
+        setSubscriptionStatus({ hasValidSubscription: false, isActive: false });
+        return;
+      }
+
+      try {
+        const subscriptions = await getUserSubscriptions();
+        const now = new Date();
+
+        // Find the most recent subscription (active or cancelled but not expired)
+        const validSubscription = subscriptions.find(sub => {
+          const endDate = new Date(sub.end_time);
+          return sub.status === true || (sub.status === false && endDate > now);
+        });
+
+        if (validSubscription) {
+          const endDate = new Date(validSubscription.end_time);
+          setSubscriptionStatus({
+            hasValidSubscription: true,
+            isActive: validSubscription.status === true,
+            endDate: endDate
+          });
+        } else {
+          setSubscriptionStatus({ hasValidSubscription: false, isActive: false });
+        }
+      } catch (error) {
+        console.error('Error loading subscription status:', error);
+        setSubscriptionStatus({ hasValidSubscription: false, isActive: false });
+      }
+    };
+
+    loadSubscriptionStatus();
+  }, [user]);
 
   const HeaderSkeleton = () => (
     <div className="flex items-center space-x-4">
@@ -118,9 +162,24 @@ const Header = () => {
         ) : user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="lg" className="flex items-center space-x-2">
-                <User className="h-4 w-4" />
-                <span>{user.name}</span>
+              <Button variant="outline" size="lg" className="flex items-center space-x-2 p-2">
+                <div className="w-8 h-8 bg-gradient-accent rounded-full flex items-center justify-center text-white text-lg font-bold">
+                  {(user as any).avatar || (user.name
+                    ? user.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                    : "U")}
+                </div>
+                {subscriptionStatus.hasValidSubscription && (
+                  <div className="flex items-center space-x-1 ml-1">
+                    <Crown className="h-4 w-4 text-yellow-500" />
+                    <Badge variant={subscriptionStatus.isActive ? "default" : "secondary"} className="text-xs">
+                      {subscriptionStatus.isActive ? "Activa" : "Cancelada"}
+                    </Badge>
+                  </div>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -228,6 +287,8 @@ const Header = () => {
       )}
     </header>
   );
-};
+});
+
+Header.displayName = 'Header';
 
 export default Header;

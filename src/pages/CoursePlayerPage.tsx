@@ -20,6 +20,7 @@ import {
   ChevronRight,
   MonitorPlay,
   ClipboardCheck,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,9 +31,11 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 // Importar los tipos actualizados
-import { CourseDetails, getCourseDetails, Lesson, Module, Comment, getLessonComments, createLessonComment, CourseRating, getCourseRating, rateCourse } from "@/api/courses"; 
+import { CourseDetails, getCourseDetails, Lesson, Module, Comment, getLessonComments, createLessonComment, deleteLessonComment, CourseRating, getCourseRating, rateCourse } from "@/api/courses";
 import { API_URL } from "@/config/api";
 import { checkLessonCompletion, checkCourseCompletion } from "@/lib/achievementSystem";
+import { useAuth } from "@/context/AuthContext";
+import { useGlobalError } from "@/context/ErrorContext";
 
 // --- Componente de Renderizado de Contenido de la Lección ---
 interface LessonContentRendererProps {
@@ -176,6 +179,8 @@ const CoursePlayerPage = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { showError } = useGlobalError();
   
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -323,11 +328,7 @@ useEffect(() => {
       description: "Has completado esta lección exitosamente.",
     });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: `No se pudo marcar la lección como completada: ${error.message}`,
-        variant: "destructive",
-      });
+      showError(error, "No se pudo marcar la lección como completada");
     }
   };
 
@@ -344,13 +345,28 @@ useEffect(() => {
         description: "Tu comentario ha sido publicado.",
       });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: `No se pudo agregar el comentario: ${error.message}`,
-        variant: "destructive",
-      });
+      showError(error, "No se pudo agregar el comentario");
     } finally {
       setLoadingComments(false);
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    if (!currentLesson) return;
+
+    try {
+      await deleteLessonComment(currentLesson.id, commentId);
+      setComments(prev => prev.filter(comment => comment.id !== commentId));
+      toast({
+        title: "Comentario eliminado",
+        description: "Tu comentario ha sido eliminado exitosamente.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `No se pudo eliminar el comentario: ${error.message}`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -368,11 +384,7 @@ useEffect(() => {
         description: "Gracias por calificar el curso.",
       });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: `No se pudo enviar la calificación: ${error.message}`,
-        variant: "destructive",
-      });
+      showError(error, "No se pudo enviar la calificación");
     }
   };
 
@@ -677,24 +689,36 @@ useEffect(() => {
                   <div key={comment.id} className="flex space-x-3 p-4 rounded-lg bg-muted/30">
                     <div className="text-2xl">👤</div>
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-medium text-sm">{comment.user_name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(comment.created_at).toLocaleDateString()}
-                        </span>
-                        {comment.rating && (
-                          <div className="flex">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`h-3 w-3 ${
-                                  star <= comment.rating!
-                                    ? 'text-yellow-400 fill-current'
-                                    : 'text-gray-300'
-                                }`}
-                              />
-                            ))}
-                          </div>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-sm">{comment.user_name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(comment.created_at).toLocaleDateString()}
+                          </span>
+                          {comment.rating && (
+                            <div className="flex">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-3 w-3 ${
+                                    star <= comment.rating!
+                                      ? 'text-yellow-400 fill-current'
+                                      : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {user && comment.user_id === user.id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteComment(comment.id)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">{comment.content}</p>

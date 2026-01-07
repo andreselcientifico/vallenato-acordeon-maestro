@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { getUserAchievements } from "@/api/subscriptions";
-import { UserAchievement, Achievement } from "@/api/subscriptions";
+import { UserAchievement} from "@/api/subscriptions";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -45,6 +45,16 @@ const MyAchievementsPage = () => {
   }
 
   const earnedAchievements = achievements.filter(a => a.earned);
+  const lastEarnedDate =
+  earnedAchievements.length > 0
+    ? new Date(
+        Math.max(
+          ...earnedAchievements
+            .filter(a => a.earned_at)
+            .map(a => new Date(a.earned_at as string).getTime())
+        )
+      ).toLocaleDateString("es-ES")
+    : "Ninguno";
   const totalAchievements = achievements.length;
   const completionRate = totalAchievements > 0 ? (earnedAchievements.length / totalAchievements) * 100 : 0;
 
@@ -109,7 +119,7 @@ const MyAchievementsPage = () => {
             <CardContent>
               <div className="text-2xl font-bold">
                 {earnedAchievements.length > 0
-                  ? new Date(Math.max(...earnedAchievements.map(a => new Date(a.earnedAt || '').getTime()))).toLocaleDateString('es-ES')
+                  ? new Date(Math.max(...earnedAchievements.map(a => new Date(a.earned_at || '').getTime()))).toLocaleDateString('es-ES')
                   : 'Ninguno'
                 }
               </div>
@@ -124,7 +134,7 @@ const MyAchievementsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {achievements.map((userAchievement) => (
             <Card
-              key={userAchievement.achievement.id}
+              key={userAchievement.id}
               className={`transition-all duration-300 ${
                 userAchievement.earned
                   ? 'bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-200 dark:border-yellow-800'
@@ -148,10 +158,10 @@ const MyAchievementsPage = () => {
                     ? 'text-yellow-800 dark:text-yellow-200'
                     : 'text-gray-500'
                 }`}>
-                  {userAchievement.achievement.name}
+                  {userAchievement.name}
                 </CardTitle>
                 <CardDescription className="text-sm">
-                  {userAchievement.achievement.description}
+                  {userAchievement.description}
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center">
@@ -161,7 +171,7 @@ const MyAchievementsPage = () => {
                       ¡Obtenido!
                     </Badge>
                     <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(userAchievement.earnedAt || '').toLocaleDateString('es-ES', {
+                      {new Date(userAchievement.earned_at || '').toLocaleDateString('es-ES', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'

@@ -25,7 +25,7 @@ function PaypalCheckout({ course, onClose, onSuccess }: PaypalCheckoutProps) {
 
           createOrder={async () => {
             const res = await fetch(
-              `${API_URL}/api/courses/${course.id}/create-order`,
+              `${API_URL}/api/courses/${course.id}/createorder`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

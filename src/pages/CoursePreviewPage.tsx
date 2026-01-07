@@ -30,7 +30,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 // Importar los tipos actualizados
-import { CourseDetails, getCourseDetails, Lesson, Module, Comment, getLessonComments, CourseRating, getCourseRating } from "@/api/courses";
+import { CourseDetails, Lesson, Module, Comment, getLessonComments, CourseRating, getCourseRating, getCourseDetails_preview } from "@/api/courses";
 import { API_URL } from "@/config/api";
 
 interface LessonContentRendererProps {
@@ -162,7 +162,7 @@ const CoursePreviewPage = () => {
     setLoading(true);
 
     Promise.all([
-      getCourseDetails(courseId).catch(() => null), // Puede fallar si no tiene acceso
+      getCourseDetails_preview(courseId).catch(() => null), // Puede fallar si no tiene acceso
       getCourseRating(courseId).catch(() => null),
     ])
       .then(([data, ratingData]) => {
@@ -248,12 +248,42 @@ const CoursePreviewPage = () => {
 
   if (!courseData || !currentLesson) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">Curso no encontrado</h2>
-          <p className="text-muted-foreground">El curso que buscas no existe o no está disponible.</p>
+      <div className="min-h-screen bg-background">
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate(-1)}
+              className="text-muted-foreground hover:text-primary"
+            >
+              ← Volver
+            </Button>
+            <Separator orientation="vertical" className="h-6" />
+            <div>
+              <h1 className="font-semibold text-lg">{courseData.title}</h1>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <div className="text-sm font-medium">
+                {courseData.completed_lessons} de {courseData.total_lessons} lecciones
+                <Progress value={getProgressPercentage} className="w-32" />
+              </div>
+            </div>
+            <Badge variant="secondary">
+              {getProgressPercentage}% completado
+            </Badge>
+          </div>
         </div>
+      </header>
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <div className="text-center">
+        <h2 className="text-2xl font-bold">{courseData.title}</h2>
+        <p className="text-lg text-muted-foreground mt-2">Este curso no tiene lecciones para mostrar.</p>
       </div>
+      </div>
+    </div>
     );
   }
 

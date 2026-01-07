@@ -5,11 +5,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Star } from "lucide-react";
+import { Check, CheckCircle, Crown, Star, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getSubscriptionPlans, SubscriptionPlan } from "@/api/subscriptions";
+import { getSubscriptionPlans, getUserSubscriptions, SubscriptionPlan } from "@/api/subscriptions";
 import { getCurrentUser } from "@/api/auth";
 import PaypalSubscription from "@/components/PaypalSubscription";
+import AuthDialog from "@/components/AuthDialog";
 
 const SubscriptionsPage = () => {
   const navigate = useNavigate();
@@ -18,6 +19,10 @@ const SubscriptionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<SubscriptionPlan | null>(null);
+  const [activeSubscriptions, setActiveSubscriptions] = useState<any[]>([]);
+
 
   useEffect(() => {
     const loadData = async () => {
@@ -28,6 +33,21 @@ const SubscriptionsPage = () => {
         ]);
         setPlans(plansData);
         setUser(userData);
+
+        // Cargar suscripciones válidas si hay usuario
+        if (userData) {
+          try {
+            const subs = await getUserSubscriptions();
+            const now = new Date();
+            const validSubs = subs.filter(sub => 
+              sub.status === true || (sub.status === false && sub.end_time && new Date(sub.end_time) > now)
+            );
+            setActiveSubscriptions(validSubs);
+          } catch (error) {
+            console.warn("Error loading subscriptions:", error);
+            setActiveSubscriptions([]);
+          }
+        }
       } catch (error) {
         toast({
           title: "Error",
@@ -44,11 +64,8 @@ const SubscriptionsPage = () => {
 
   const handleSubscribe = (plan: SubscriptionPlan) => {
     if (!user) {
-      toast({
-        title: "Inicia sesión",
-        description: "Debes iniciar sesión para suscribirte",
-        variant: "destructive",
-      });
+      setPendingPlan(plan);
+      setAuthDialogOpen(true);
       return;
     }
     setSelectedPlan(plan);
@@ -64,6 +81,22 @@ const SubscriptionsPage = () => {
     window.location.reload();
   };
 
+  /**
+   * Devuelve true si la feature es negativa
+   */
+  function isNegativeFeature(feature: string): boolean {
+    return feature.startsWith("!");
+  }
+
+  /**
+   * Devuelve el texto limpio para mostrar
+   */
+  function displayFeature(feature: string): string {
+    return feature.replace(/^!/, "");
+  }
+
+
+ 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -84,7 +117,7 @@ const SubscriptionsPage = () => {
               </Button>
               <div>
                 <h1 className="text-2xl font-bold">Planes de Suscripción</h1>
-                <p className="text-muted-foreground">Accede a contenido premium ilimitado</p>
+                <p className="text-muted-foreground">Accede a contenido ilimitado</p>
               </div>
             </div>
           </div>
@@ -99,9 +132,6 @@ const SubscriptionsPage = () => {
           </div>
           <h2 className="text-4xl font-bold mb-4">
             <span className="text-primary">Suscríbete</span>{" "}
-            <span className="bg-gradient-accent bg-clip-text text-transparent">
-              Premium
-            </span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Obtén acceso ilimitado a todos nuestros cursos, contenido exclusivo y soporte personalizado.
@@ -138,26 +168,99 @@ const SubscriptionsPage = () => {
 
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  {plan.features.map((feature, index) => (
-                    <div key={index} className="flex items-center space-x-3">
-                      <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span className="text-sm">{feature}</span>
-                    </div>
-                  ))}
+                 {plan.features.map((feature, index) => {
+                    const negative = isNegativeFeature(feature);
+
+                    return (
+                      <div
+                        key={index}
+                        className={`flex items-center space-x-3 ${
+                          negative ? "text-muted-foreground line-through" : ""
+                        }`}
+                      >
+                        {negative ? (
+                          <X className="h-4 w-4 text-red-500 flex-shrink-0" />
+                        ) : (
+                          <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        )}
+
+                        <span className="text-sm">
+                          {displayFeature(feature)}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="pt-4">
-                  <Button
-                    className="w-full"
-                    variant={plan.name.toLowerCase().includes('premium') ? 'default' : 'outline'}
-                    onClick={() => handleSubscribe(plan)}
-                  >
-                    {user ? 'Suscribirse' : 'Inicia Sesión para Suscribirte'}
-                  </Button>
+                  {(() => {
+                    const activeSub = activeSubscriptions.find(sub => sub.status === true);
+                    const cancelledSub = activeSubscriptions.find(sub => sub.status === false);
+                    
+                    if (activeSub) {
+                      return (
+                        <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+                          <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                          <p className="text-green-800 font-medium">¡Ya tienes una suscripción activa!</p>
+                          <p className="text-green-600 text-sm">Disfruta de acceso ilimitado a todos los cursos</p>
+                        </div>
+                      );
+                    } else if (cancelledSub) {
+                      return (
+                        <div className="text-center p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                          <CheckCircle className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                          <p className="text-orange-800 font-medium">Suscripción cancelada</p>
+                          <p className="text-orange-600 text-sm">
+                            Acceso garantizado hasta {new Date(cancelledSub.end_time!).toLocaleDateString('es-ES')}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                  {!activeSubscriptions.length && (
+                    <Button
+                      className="w-full"
+                      variant={plan.name.toLowerCase().includes('premium') ? 'default' : 'outline'}
+                      onClick={() => handleSubscribe(plan)}
+                    >
+                      {user ? 'Suscribirse' : 'Inicia Sesión para Suscribirte'}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))}
+          <AuthDialog
+            open={authDialogOpen}
+            onOpenChange={setAuthDialogOpen}
+            onLogin={async () => {
+              try {
+                // Volvemos a consultar el usuario autenticado
+                const userData = await getCurrentUser();
+                setUser(userData);
+
+                setAuthDialogOpen(false);
+
+                toast({
+                  title: "¡Bienvenido!",
+                  description: "Has iniciado sesión correctamente",
+                });
+
+                // Si había un plan pendiente, continuamos con la suscripción
+                if (pendingPlan) {
+                  setSelectedPlan(pendingPlan);
+                  setPendingPlan(null);
+                }
+              } catch (error) {
+                toast({
+                  title: "Error",
+                  description: "No se pudo obtener el usuario autenticado",
+                  variant: "destructive",
+                });
+              }
+            }}
+          />
         </div>
 
         {/* Benefits Section */}

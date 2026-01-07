@@ -15,8 +15,12 @@ const Courses = () => {
     // Llamar a la API cuando el componente se monte
     const loadCourses = async () => {
       try {
-        const coursesData = await fetchCourses_API();  // Obtener los cursos ordenados por rating
-        setCourses(coursesData);  // Guardar los cursos en el estado
+        const coursesData = await fetchCourses_API();  // Obtener los cursos
+        // Ordenar por rating descendente y tomar solo los primeros 3
+        const sortedCourses = coursesData
+          .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
+          .slice(0, 3);
+        setCourses(sortedCourses);  // Guardar los 3 cursos mejor calificados
       } catch (error) {
         toast.error(`Error al cargar los cursos. ${(error as Error).message}`);
       }
@@ -32,11 +36,11 @@ const Courses = () => {
           <h2 className="text-4xl lg:text-5xl font-bold mb-4">
             <span className="text-primary">Cursos</span>{" "}
             <span className="bg-gradient-accent bg-clip-text text-transparent">
-              de Acordeón
+              Destacados
             </span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Programas estructurados para llevarte desde principiante hasta maestro del vallenato
+            Nuestros cursos mejor calificados por estudiantes satisfechos
           </p>
         </div>
 

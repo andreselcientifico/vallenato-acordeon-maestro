@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect, memo } from "react";
 import { Play, Star, Users } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import heroBackground from "@/assets/hero-background.webp";
+import { fetchCourses_API } from "@/api/admin";
 
 /**
  * HERO optimizado para Lighthouse:
@@ -10,8 +12,32 @@ import heroBackground from "@/assets/hero-background.webp";
  * - La imagen ahora puede usar fetchpriority="high" y loading="eager".
  * - Esto mejora drásticamente el Largest Contentful Paint (LCP).
  */
-const Hero = () => {
+const Hero = memo(() => {
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalCourses: 0,
+  });
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const courses = await fetchCourses_API();
+        const totalStudents = courses.reduce((sum: number, course: any) => sum + (course.students || 0), 0);
+        const totalCourses = courses.length;
+        
+        setStats({
+          totalStudents,
+          totalCourses,
+        });
+      } catch (error) {
+        console.warn("Error loading stats:", error);
+        // Mantener valores por defecto si falla la carga
+      }
+    };
+
+    loadStats();
+  }, []);
 
   return (
     <section
@@ -76,20 +102,14 @@ const Hero = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
               <Card className="bg-gradient-card p-4 sm:p-6 text-center shadow-warm">
                 <Users className="h-6 w-6 sm:h-8 sm:w-8 text-primary mx-auto mb-2" />
-                <div className="text-xl sm:text-2xl font-bold text-primary">500+</div>
+                <div className="text-xl sm:text-2xl font-bold text-primary">{stats.totalStudents}+</div>
                 <div className="text-xs sm:text-sm text-muted-foreground">Estudiantes</div>
               </Card>
 
               <Card className="bg-gradient-card p-4 sm:p-6 text-center shadow-warm">
                 <Star className="h-6 w-6 sm:h-8 sm:w-8 text-primary mx-auto mb-2" />
-                <div className="text-xl sm:text-2xl font-bold text-primary">20+</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Años Enseñando</div>
-              </Card>
-
-              <Card className="bg-gradient-card p-4 sm:p-6 text-center shadow-warm">
-                <Play className="h-6 w-6 sm:h-8 sm:w-8 text-primary mx-auto mb-2" />
-                <div className="text-xl sm:text-2xl font-bold text-primary">100+</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Videos Lecciones</div>
+                <div className="text-xl sm:text-2xl font-bold text-primary">{stats.totalCourses}+</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">Cursos</div>
               </Card>
             </div>
           </div>
@@ -128,6 +148,8 @@ const Hero = () => {
       </div>
     </section>
   );
-};
+});
+
+Hero.displayName = 'Hero';
 
 export default Hero;

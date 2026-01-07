@@ -13,6 +13,8 @@ import { Label } from "./ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { loginUser, registerUser } from "../api/auth";
+import { useGlobalError } from "../context/ErrorContext";
+import { useNavigate } from "react-router-dom";
 
 interface AuthDialogProps {
   children?: React.ReactNode;
@@ -22,6 +24,7 @@ interface AuthDialogProps {
 }
 
 const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) => {
+  const navigate = useNavigate();
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = open !== undefined;
   const isOpen = isControlled ? open : internalOpen;
@@ -35,6 +38,7 @@ const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) 
     confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
+  const { showError } = useGlobalError();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +51,7 @@ const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) 
       });
       setIsOpen(false);
     } catch (error: any) {
-      alert(error.message);
+      showError(error, "Error al iniciar sesión");
     } finally {
       setLoading(false);
     }
@@ -57,10 +61,11 @@ const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) 
     e.preventDefault();
 
     if (registerForm.password !== registerForm.confirmPassword) {
-      alert("Las contraseñas no coinciden");
+      showError(null, "Las contraseñas no coinciden");
       return;
     }
 
+    setLoading(true);
     try {
       const data = await registerUser(
         registerForm.name,
@@ -75,7 +80,9 @@ const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) 
 
       setIsOpen(false);
     } catch (error: any) {
-      alert(error.message);
+      showError(error, "Error al registrarse");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -162,6 +169,10 @@ const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) 
                 <Button
                   variant="link"
                   className="text-sm text-muted-foreground"
+                  onClick={() => {
+                    setIsOpen(false);
+                    navigate("/olvide-contrasena");
+                  }}
                 >
                   ¿Olvidaste tu contraseña?
                 </Button>

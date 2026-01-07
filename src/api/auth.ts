@@ -10,7 +10,9 @@ export async function loginUser(email: string, password: string) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.error || "Error al iniciar sesión");
+    const error = new Error(err.message || err.error || "Error al iniciar sesión");
+    (error as any).status = res.status;
+    throw error;
   }
   const data = await res.json();
   return data?.data?.user || null;
@@ -54,7 +56,9 @@ export async function registerUser(name: string, email: string, password: string
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Error al registrarse");
+    const error = new Error(err.message || "Error al registrarse");
+    (error as any).status = res.status;
+    throw error;
   }
 
   const data = await res.json();

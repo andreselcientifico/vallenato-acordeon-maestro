@@ -16,16 +16,20 @@ import { API_URL } from "@/config/api";
 import { toast } from "sonner";
 
 type User = {
+  id: string;
   name: string;
   email: string;
   role?: string;
   verified?: boolean;
+  avatar?: string;
 } | null;
+
+type UserDto = { name?: string; email?: string };
 
 type AuthContextType = {
   user: User;
   loading: boolean;
-  login: (userData: User) => void;
+  login: (userData: UserDto) => void;
   logout: () => Promise<void>;
 };
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, ArrowLeft, Save, Eye, GripVertical, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Trash2, Plus, ArrowLeft, Save, Eye, GripVertical, ChevronDown, ChevronUp, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { saveCourseAPI, fetchCoursesAPI, deleteCourseAPI } from "@/api/admin";
 import CoursesPage from "./CoursesPage";
@@ -32,7 +33,7 @@ import {
   updateAchievement,
   deleteAchievement,
   SubscriptionPlan,
-  Achievement
+  UserAchievement
 } from "@/api/subscriptions";
 
 // ----------------------------------------------------------------------
@@ -156,10 +157,12 @@ const AdminPage = () => {
     active: true,
   });
   const [editingSubscriptionPlan, setEditingSubscriptionPlan] = useState<string | null>(null);
+  const [newPlanFeature, setNewPlanFeature] = useState("");
+  const [isNegative, setIsNegative] = useState(false);
 
   // Estado para logros
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [currentAchievement, setCurrentAchievement] = useState<Partial<Achievement>>({
+  const [achievements, setAchievements] = useState<UserAchievement[]>([]);
+  const [currentAchievement, setCurrentAchievement] = useState<Partial<UserAchievement>>({
     name: "",
     description: "",
     icon: "",
@@ -168,6 +171,19 @@ const AdminPage = () => {
     active: true,
   });
   const [editingAchievement, setEditingAchievement] = useState<string | null>(null);
+
+  // Estado para diálogo de eliminación
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    type: 'plan' | 'achievement' | null;
+    id: string;
+    name: string;
+  }>({
+    open: false,
+    type: null,
+    id: '',
+    name: '',
+  });
 
   const toggleModule = (index: number) => {
     const newSet = new Set(expandedModules);
@@ -185,16 +201,63 @@ const AdminPage = () => {
     }
   }, [search]);
 
+    const loadAchievements = useCallback(async () => {
+    try {
+      const achievementsData = await getAchievements();
+      setAchievements(achievementsData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los logros",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+  const loadSubscriptionPlans = useCallback(async () => {
+    try {
+      const plans = await getSubscriptionPlans();
+      setSubscriptionPlans(plans);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los planes de suscripción",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+
   // ----------------------------------------------------------------------
   // LOAD SUBSCRIPTION PLANS AND ACHIEVEMENTS
   // ----------------------------------------------------------------------
   useEffect(() => {
-    if (activeTab === "subscriptions") {
-      loadSubscriptionPlans();
-    } else if (activeTab === "achievements") {
-      loadAchievements();
-    }
-  }, [activeTab]);
+    loadSubscriptionPlans();
+    loadAchievements();
+  }, [loadSubscriptionPlans, loadAchievements]);
+
+  function addPlanFeature() {
+    if (!newPlanFeature.trim()) return;
+
+    const feature = isNegative
+      ? `!${newPlanFeature.trim()}`
+      : newPlanFeature.trim();
+
+    setCurrentSubscriptionPlan((prev) => ({
+      ...prev,
+      features: [...(prev.features ?? []), feature],
+    }));
+
+    setNewPlanFeature("");
+    setIsNegative(false);
+  }
+
+  const removePlanFeature = (index: number) => {
+    setCurrentSubscriptionPlan({
+      ...currentSubscriptionPlan,
+      features: currentSubscriptionPlan.features.filter((_, i) => i !== index),
+    });
+  };
 
   // ----------------------------------------------------------------------
   // FILTER COURSES
@@ -310,18 +373,26 @@ const AdminPage = () => {
   // ----------------------------------------------------------------------
   // SUBSCRIPTION MANAGEMENT
   // ----------------------------------------------------------------------
-  const loadSubscriptionPlans = async () => {
-    try {
-      const plans = await getSubscriptionPlans();
-      setSubscriptionPlans(plans);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los planes de suscripción",
-        variant: "destructive",
-      });
-    }
-  };
+  /**
+   * Devuelve true si la feature es negativa
+   */
+  function isNegativeFeature(feature: string): boolean {
+    return feature.startsWith("!");
+  }
+
+  /**
+   * Limpia el texto mostrado al usuario.
+   */
+  function normalizeFeature(feature: string): string {
+    return feature.replace(/^!/, "");
+  }
+
+  /**
+   * Devuelve el texto limpio para mostrar
+   */
+  function displayFeature(feature: string): string {
+    return feature.replace(/^!/, "");
+  }
 
   const saveSubscriptionPlan = async () => {
     try {
@@ -354,20 +425,17 @@ const AdminPage = () => {
     }
   };
 
-  const deleteSubscriptionPlan = async (planId: string) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar este plan de suscripción?")) return;
-
-    try {
-      await deleteSubscriptionPlan(planId);
-      await loadSubscriptionPlans();
-      toast({ title: "Éxito", description: "Plan de suscripción eliminado correctamente" });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el plan de suscripción",
-        variant: "destructive",
-      });
-    }
+  const deleteSubscription = async (planId: string) => {
+    deleteSubscriptionPlan(planId);
+    const plan = subscriptionPlans.find(p => p.id === planId);
+    setDeleteDialog({
+      open: true,
+      type: 'plan',
+      id: planId,
+      name: plan?.name || 'este plan',
+    });
+    // reload page
+    await loadSubscriptionPlans();
   };
 
   const resetSubscriptionForm = () => {
@@ -381,23 +449,12 @@ const AdminPage = () => {
       active: true,
     });
     setEditingSubscriptionPlan(null);
+    setActiveTab("subscriptions");
   };
 
   // ----------------------------------------------------------------------
   // ACHIEVEMENT MANAGEMENT
   // ----------------------------------------------------------------------
-  const loadAchievements = async () => {
-    try {
-      const achievementsData = await getAchievements();
-      setAchievements(achievementsData);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los logros",
-        variant: "destructive",
-      });
-    }
-  };
 
   const saveAchievement = async () => {
     try {
@@ -411,10 +468,10 @@ const AdminPage = () => {
       }
 
       if (editingAchievement) {
-        await updateAchievement(editingAchievement, currentAchievement as Achievement);
+        await updateAchievement(editingAchievement, currentAchievement as UserAchievement);
         toast({ title: "Éxito", description: "Logro actualizado correctamente" });
       } else {
-        await createAchievement(currentAchievement as Omit<Achievement, 'id' | 'created_at'>);
+        await createAchievement(currentAchievement as Omit<UserAchievement, 'id' | 'created_at'>);
         toast({ title: "Éxito", description: "Logro creado correctamente" });
       }
 
@@ -430,20 +487,17 @@ const AdminPage = () => {
     }
   };
 
-  const deleteAchievement = async (achievementId: string) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar este logro?")) return;
-
-    try {
-      await deleteAchievement(achievementId);
-      await loadAchievements();
-      toast({ title: "Éxito", description: "Logro eliminado correctamente" });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el logro",
-        variant: "destructive",
-      });
-    }
+  const deleteAchievemen = async (achievementId: string) => {
+    deleteAchievement(achievementId)
+    const achievement = achievements.find(a => a.id === achievementId);
+    setDeleteDialog({
+      open: true,
+      type: 'achievement',
+      id: achievementId,
+      name: achievement?.name || 'este logro',
+    });
+    // reload page
+    await loadAchievements();
   };
 
   const resetAchievementForm = () => {
@@ -456,6 +510,30 @@ const AdminPage = () => {
       active: true,
     });
     setEditingAchievement(null);
+    setActiveTab("achievements");
+  };
+
+  const handleDeleteConfirm = async () => {
+    const { type, id } = deleteDialog;
+    try {
+      if (type === 'plan') {
+        await deleteSubscription(id);
+        await loadSubscriptionPlans();
+        toast({ title: "Éxito", description: "Plan de suscripción eliminado correctamente" });
+      } else if (type === 'achievement') {
+        await deleteAchievemen(id);
+        await loadAchievements();
+        toast({ title: "Éxito", description: "Logro eliminado correctamente" });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `No se pudo eliminar ${type === 'plan' ? 'el plan de suscripción' : 'el logro'}`,
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialog({ open: false, type: null, id: '', name: '' });
+    }
   };
 
   // ----------------------------------------------------------------------
@@ -659,6 +737,7 @@ const AdminPage = () => {
     });
     setEditingCourse(null);
     setExpandedModules(new Set([0]));
+    setActiveTab("manage");
   };
 
   // ----------------------------------------------------------------------
@@ -1121,12 +1200,27 @@ const AdminPage = () => {
                       <CardContent>
                         <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
                         <div className="space-y-2 mb-4">
-                          {plan.features.map((feature, index) => (
-                            <div key={index} className="flex items-center text-sm">
-                              <Check className="h-4 w-4 text-green-500 mr-2" />
-                              {feature}
-                            </div>
-                          ))}
+                          {plan.features.map((feature, index) => {
+                            const negative = isNegativeFeature(feature);
+
+                            return (
+                              <div
+                                key={index}
+                                className={`flex items-center text-sm ${
+                                  negative ? "text-muted-foreground line-through" : ""
+                                }`}
+                              >
+                                {negative ? (
+                                  <X className="h-4 w-4 text-red-500 mr-2" />
+                                ) : (
+                                  <Check className="h-4 w-4 text-green-500 mr-2" />
+                                )}
+
+                                {displayFeature(feature)}
+                              </div>
+                            );
+                          })}
+
                         </div>
                         <div className="flex gap-2">
                           <Button
@@ -1144,7 +1238,7 @@ const AdminPage = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => deleteSubscriptionPlan(plan.id)}
+                            onClick={() => deleteSubscription(plan.id)}
                             className="text-destructive hover:bg-destructive/10"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -1212,7 +1306,7 @@ const AdminPage = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => deleteAchievement(achievement.id)}
+                            onClick={() => deleteAchievemen(achievement.id)}
                             className="text-destructive hover:bg-destructive/10"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -1262,13 +1356,21 @@ const AdminPage = () => {
                       placeholder="1"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>ID del Plan PayPal *</Label>
+                 <div className="space-y-2">
+                    <Label>ID del Plan PayPal (opcional)</Label>
                     <Input
-                      value={currentSubscriptionPlan.paypal_plan_id}
-                      onChange={(e) => setCurrentSubscriptionPlan({ ...currentSubscriptionPlan, paypal_plan_id: e.target.value })}
+                      value={currentSubscriptionPlan.paypal_plan_id ?? ""}
+                      onChange={(e) =>
+                        setCurrentSubscriptionPlan({
+                          ...currentSubscriptionPlan,
+                          paypal_plan_id: e.target.value || null,
+                        })
+                      }
                       placeholder="P-XXXXXXXXXXXXXXXXX"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Solo requerido si el plan se cobra automáticamente con PayPal
+                    </p>
                   </div>
                 </div>
 
@@ -1286,25 +1388,42 @@ const AdminPage = () => {
                   <Label>Características</Label>
                   <div className="flex gap-2">
                     <Input
-                      value={newFeature}
-                      onChange={(e) => setNewFeature(e.target.value)}
+                      value={newPlanFeature}
+                      onChange={(e) => setNewPlanFeature(e.target.value)}
                       placeholder="Acceso ilimitado a cursos"
-                      onKeyPress={(e) => e.key === "Enter" && addFeature()}
+                      onKeyDown={(e) => e.key === "Enter" && addPlanFeature()}
                     />
-                    <Button onClick={addFeature} variant="outline" size="icon">
+                    <Button
+                      variant={isNegative ? "destructive" : "outline"}
+                      onClick={() => setIsNegative((v) => !v)}
+                    >
+                      {isNegative ? "Negativa" : "Positiva"}
+                    </Button>
+                    <Button onClick={addPlanFeature} variant="outline" size="icon">
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {currentSubscriptionPlan.features?.map((feature, index) => (
-                      <Badge key={index} variant="secondary" className="gap-2 pl-3">
-                        {feature}
-                        <Trash2
-                          className="h-3 w-3 cursor-pointer hover:text-destructive"
-                          onClick={() => removeFeature(index)}
-                        />
-                      </Badge>
-                    ))}
+                    {currentSubscriptionPlan.features?.map((feature, index) => {
+                      const negative = isNegativeFeature(feature);
+
+                      return (
+                        <Badge
+                          key={index}
+                          variant={negative ? "outline" : "secondary"}
+                          className={`gap-2 pl-3 ${
+                            negative ? "text-muted-foreground line-through" : ""
+                          }`}
+                        >
+                          {negative ? "✖" : "✔"} {normalizeFeature(feature)}
+
+                          <Trash2
+                            className="h-3 w-3 cursor-pointer hover:text-destructive"
+                            onClick={() => removePlanFeature(index)}
+                          />
+                        </Badge>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1323,7 +1442,7 @@ const AdminPage = () => {
                     <Save className="h-4 w-4 mr-2" />
                     {editingSubscriptionPlan ? "Actualizar" : "Crear"} Plan
                   </Button>
-                  <Button variant="outline" onClick={() => setActiveTab("subscriptions")}>
+                  <Button variant="outline" onClick={resetSubscriptionForm}>
                     Cancelar
                   </Button>
                 </div>
@@ -1371,6 +1490,7 @@ const AdminPage = () => {
                         <SelectItem value="lesson_completed">Lección completada</SelectItem>
                         <SelectItem value="login_streak">Racha de logins</SelectItem>
                         <SelectItem value="courses_enrolled">Cursos inscritos</SelectItem>
+                        <SelectItem value="comments_created">Comentarios</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1410,7 +1530,7 @@ const AdminPage = () => {
                     <Save className="h-4 w-4 mr-2" />
                     {editingAchievement ? "Actualizar" : "Crear"} Logro
                   </Button>
-                  <Button variant="outline" onClick={() => setActiveTab("achievements")}>
+                  <Button variant="outline" onClick={resetAchievementForm}>
                     Cancelar
                   </Button>
                 </div>
@@ -1419,6 +1539,21 @@ const AdminPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente {deleteDialog.type === 'plan' ? 'el plan de suscripción' : 'el logro'} "{deleteDialog.name}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>Eliminar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

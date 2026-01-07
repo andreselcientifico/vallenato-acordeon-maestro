@@ -28,15 +28,60 @@ export default defineConfig(({ mode }) => ({
     },
   },
    build: {
+    // Optimizaciones de build
+    target: 'esnext',
+    minify: 'esbuild',
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Si el archivo pertenece a una librería externa, lo ponemos en su propio chunk
+          // Chunking inteligente para mejor caching
           if (id.includes('node_modules')) {
-            return 'vendor'; // Los módulos de node_modules se agruparán en un solo archivo 'vendor.js'
+            // Separar React y sus dependencias
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            // Separar UI libraries
+            if (id.includes('@radix-ui') || id.includes('lucide-react') || id.includes('tailwindcss')) {
+              return 'ui-vendor';
+            }
+            // Separar otras librerías
+            if (id.includes('axios') || id.includes('date-fns') || id.includes('@tanstack/react-query')) {
+              return 'utils-vendor';
+            }
+            // Paypal y otras librerías pesadas
+            if (id.includes('paypal') || id.includes('stripe')) {
+              return 'payment-vendor';
+            }
+            return 'vendor';
+          }
+          // Chunking por páginas/routes
+          if (id.includes('/pages/')) {
+            const pageName = id.split('/pages/')[1].split('.')[0];
+            return `page-${pageName}`;
           }
         }
       }
-    }
+    },
+    // Optimizaciones adicionales
+    chunkSizeWarningLimit: 1000,
+    cssCodeSplit: true,
+    reportCompressedSize: false,
+  },
+  // Optimizaciones de desarrollo
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@tanstack/react-query',
+      'lucide-react',
+      'date-fns'
+    ],
+    exclude: ['@vite/client', '@vite/env']
+  },
+  // Preload de módulos críticos
+  ssr: {
+    noExternal: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu']
   }
 }));
