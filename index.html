@@ -25,14 +25,36 @@
       // Registrar Service Worker para PWA y cache
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then((registration) => {
-              console.log('SW registered: ', registration);
+              console.log('✅ Service Worker registrado:', registration);
+              
+              // Verificar actualizaciones periódicamente
+              setInterval(() => {
+                registration.update();
+              }, 60000); // Cada minuto
+              
+              // Notificar si hay una nueva versión
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('🔄 Nueva versión del Service Worker disponible');
+                  }
+                });
+              });
             })
             .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
+              console.error('❌ Error al registrar Service Worker:', registrationError);
             });
+
+          // Limpiar cache corrupto si hay error
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            console.log('🔄 Controlador del Service Worker cambió');
+          });
         });
+      } else {
+        console.warn('⚠️ Service Workers no soportado en este navegador');
       }
     </script>
   </body>

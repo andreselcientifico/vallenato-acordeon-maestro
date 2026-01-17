@@ -1,140 +1,153 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Clock, Users, Star, CheckCircle } from "lucide-react";
+import { BookOpen, Star, Zap, Users } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Badge } from "./ui/badge";
-import { fetchCourses_API } from "@/api/admin";  // Asume que esta es la ruta correcta
-import { toast } from "sonner";
 
 const Courses = () => {
   const navigate = useNavigate();
-  const [courses, setCourses] = useState<any[]>([]);  // Aquí guardamos los cursos
-
-  useEffect(() => {
-    // Llamar a la API cuando el componente se monte
-    const loadCourses = async () => {
-      try {
-        const coursesData = await fetchCourses_API();  // Obtener los cursos
-        // Ordenar por rating descendente y tomar solo los primeros 3
-        const sortedCourses = coursesData
-          .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
-          .slice(0, 3);
-        setCourses(sortedCourses);  // Guardar los 3 cursos mejor calificados
-      } catch (error) {
-        toast.error(`Error al cargar los cursos. ${(error as Error).message}`);
-      }
-    };
-    
-    loadCourses();  // Llamar la función para cargar los cursos
-  }, []);  // El efecto solo se ejecuta una vez cuando el componente se monta
 
   return (
-    <section id="cursos" className="py-20 bg-background">
+    <section id="cursos" className="py-20 bg-gradient-to-b from-background via-vallenato-cream/5 to-background">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-bold mb-4">
-            <span className="text-primary">Cursos</span>{" "}
+        {/* Encabezado Principal */}
+        <div className="text-center mb-20">
+          <h2 className="text-4xl lg:text-6xl font-bold mb-6">
+            <span className="text-primary">Aprende a Tocar</span>{" "}
             <span className="bg-gradient-accent bg-clip-text text-transparent">
-              Destacados
+              el Acordeón
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Nuestros cursos mejor calificados por estudiantes satisfechos
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-4 leading-relaxed">
+            Cursos diseñados por una Maestra en Música con experiencia internacional. 
+            Desde principiantes hasta niveles avanzados, con metodología probada y reconocimientos internacionales.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.map((course) => (
-            <Card key={course.id} className="bg-gradient-card shadow-elegant border-primary/20 overflow-hidden group hover:shadow-warm transition-all duration-300 hover:scale-105">
-              <div className={`h-2 bg-${course.color}`}></div>
-
-              <div className="p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <Badge 
-                    variant="secondary" 
-                    className={`bg-${course.color}/10 text-${course.color} border-${course.color}/20`}
-                  >
-                    {course.level}
-                  </Badge>
-                  <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                    <Star className="h-4 w-4 fill-current text-yellow-500" />
-                    <span>{course.rating}</span>
-                  </div>
-                </div>
-
-                <h3 className="text-2xl font-bold text-primary mb-3">
-                  {course.title}
-                </h3>
-
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  {course.description}
-                </p>
-
-                <div className="flex items-center justify-between mb-6 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{course.duration}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Users className="h-4 w-4" />
-                    <span>{course.students} estudiantes</span>
-                  </div>
-                </div>
-
-                <div className="space-y-3 mb-8">
-                  {course.features.map((feature: string, index: number) => (
-                    <div key={index} className="flex items-center space-x-3">
-                      <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
-                      <span className="text-sm text-muted-foreground">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-3xl font-bold text-primary">{course.price}</span>
-                    <span className="text-sm text-muted-foreground">por curso</span>
-                  </div>
-
-                  <Button 
-                    variant="hero" 
-                    className="w-full shadow-elegant"
-                    size="lg"
-                    onClick={() => navigate('/cursos')}
-                  >
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Ver Cursos
-                  </Button>
-
-                  <Button 
-                    variant="outline" 
-                    className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                    onClick={() => navigate('/cursos')}
-                  >
-                    Ver Detalles
-                  </Button>
-                </div>
+        {/* Características Principales */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+          <Card className="bg-gradient-card p-8 shadow-elegant border-primary/20 hover:shadow-warm transition-all duration-300">
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <Star className="h-6 w-6 text-primary" />
               </div>
-            </Card>
-          ))}
+              <h3 className="text-lg font-semibold text-primary">Cursos de Calidad</h3>
+            </div>
+            <p className="text-muted-foreground">
+              Metodología probada con miles de estudiantes satisfechos alrededor del mundo
+            </p>
+          </Card>
+
+          <Card className="bg-gradient-card p-8 shadow-elegant border-primary/20 hover:shadow-warm transition-all duration-300">
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 bg-vallenato-red/10 rounded-lg">
+                <Users className="h-6 w-6 text-vallenato-red" />
+              </div>
+              <h3 className="text-lg font-semibold text-primary">Comunidad Global</h3>
+            </div>
+            <p className="text-muted-foreground">
+              Aprende con estudiantes de 3 continentes diferentes en un ambiente inclusivo
+            </p>
+          </Card>
+
+          <Card className="bg-gradient-card p-8 shadow-elegant border-primary/20 hover:shadow-warm transition-all duration-300">
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 bg-vallenato-gold/10 rounded-lg">
+                <Zap className="h-6 w-6 text-vallenato-gold" />
+              </div>
+              <h3 className="text-lg font-semibold text-primary">Acceso 24/7</h3>
+            </div>
+            <p className="text-muted-foreground">
+              Aprende a tu propio ritmo con acceso ilimitado a todo el material del curso
+            </p>
+          </Card>
         </div>
 
-        <div className="text-center mt-16">
-          <Card className="bg-gradient-accent text-white p-8 max-w-2xl mx-auto shadow-elegant">
-            <h3 className="text-2xl font-bold mb-4">¿No estás seguro qué curso elegir?</h3>
-            <p className="mb-6 opacity-90">
-              Agenda una consulta gratuita de 15 minutos y te ayudo a encontrar el curso perfecto para tu nivel.
-            </p>
-            <Button 
-              variant="secondary" 
-              size="lg" 
-              className="bg-white text-primary hover:bg-white/90"
-              onClick={() => navigate('/cursos')}
-            >
-              Explorar Cursos
-            </Button>
+        {/* CTA Principal - Botón Grande Atractivo */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-hero rounded-3xl transform -rotate-2 blur-2xl opacity-30"></div>
+          <Card className="relative bg-gradient-to-r from-primary/90 to-vallenato-red/90 backdrop-blur-xl border-primary/50 p-12 md:p-16 shadow-elegant overflow-hidden">
+            {/* Elementos decorativos */}
+            <div className="absolute top-0 right-0 w-72 h-72 bg-vallenato-gold/10 rounded-full -mr-36 -mt-36"></div>
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/5 rounded-full -ml-48 -mb-48"></div>
+
+            <div className="relative z-10">
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+                <div className="lg:w-1/2">
+                  <h3 className="text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
+                    Comienza Tu Viaje Musical Hoy
+                  </h3>
+                  <p className="text-lg text-white/90 mb-8 leading-relaxed">
+                    Explora nuestro catálogo completo de cursos de acordeón vallenato. 
+                    Cada curso está diseñado con cuidado para llevarte del aprendizaje básico 
+                    a la maestría musical. Acceso inmediato a todas las lecciones y materiales.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Button
+                      variant="secondary"
+                      size="lg"
+                      className="bg-white text-primary hover:bg-white/90 font-semibold shadow-elegant text-base"
+                      onClick={() => navigate('/cursos')}
+                    >
+                      <BookOpen className="h-5 w-5 mr-2" />
+                      Ver Todos los Cursos
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="border-white text-white hover:bg-white/10 font-semibold text-base"
+                      onClick={() => navigate('/cursos')}
+                    >
+                      Detalles de Precios
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="lg:w-1/2 flex justify-center">
+                  <div className="relative w-64 h-64 md:w-80 md:h-80">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-full blur-xl"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-white">
+                        <div className="text-6xl mb-4">🎵</div>
+                        <p className="text-xl font-semibold text-center">Aprende Acordeón</p>
+                        <p className="text-sm text-white/80 text-center mt-2">De forma online</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Row */}
+              <div className="grid grid-cols-3 gap-6 mt-12 pt-8 border-t border-white/20">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-white mb-1">1000+</div>
+                  <div className="text-sm text-white/80">Estudiantes Activos</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-white mb-1">20+</div>
+                  <div className="text-sm text-white/80">Cursos Disponibles</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-white mb-1">4.9★</div>
+                  <div className="text-sm text-white/80">Puntuación Promedio</div>
+                </div>
+              </div>
+            </div>
           </Card>
+        </div>
+
+        {/* Sección de Testimonio / Llamado adicional */}
+        <div className="mt-16 text-center">
+          <p className="text-lg text-muted-foreground mb-6">
+            "Cada estudiante merece aprender música de una manera inspiradora y efectiva"
+          </p>
+          <div className="flex justify-center items-center space-x-3">
+            <div className="h-10 w-10 rounded-full bg-gradient-hero"></div>
+            <div className="text-left">
+              <p className="font-semibold text-primary">Andrea Paola Argote Chávez</p>
+              <p className="text-sm text-muted-foreground">Maestra en Música, Ingeniería de Sonido</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>

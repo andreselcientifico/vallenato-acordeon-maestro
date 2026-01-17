@@ -12,17 +12,18 @@ const Footer = () => {
             <div className="flex items-center space-x-3">
               <img 
                 src={valenatoLogo} 
-                alt="Vallenato Academy" 
+                alt="Andrea Paola Argote" 
                 className="h-12 w-12 rounded-full object-cover shadow-warm"
               />
               <div>
-                <h3 className="text-xl font-bold">Academia Vallenato</h3>
-                <p className="text-sm opacity-80">Maestro del Acordeón</p>
+                <h3 className="text-xl font-bold">Andrea Paola Argote Chávez</h3>
+                <p className="text-sm opacity-80">Maestra en Música, Ingeniería de Sonido</p>
               </div>
             </div>
             <p className="text-white/80 leading-relaxed">
-              Preservando y compartiendo la tradición del vallenato con estudiantes de todo el mundo. 
-              Más de 20 años formando nuevos acordeonistas.
+              Egresada de la Pontificia Universidad Javeriana en Bogotá. Especialista en acordeón vallenato, 
+              producción audiovisual y educación musical. Embajadora cultural de Colombia reconocida internacionalmente. 
+              Comprometida con preservar y compartir la tradición del vallenato con estudiantes de todo el mundo.
             </p>
             <div className="flex space-x-4">
               <Button variant="ghost" size="icon" className="hover:bg-white/20 text-white hover:text-white">
@@ -59,22 +60,25 @@ const Footer = () => {
             </nav>
           </div>
 
-          {/* Courses */}
+          {/* About Andrea */}
           <div>
-            <h4 className="text-lg font-semibold mb-6 text-vallenato-gold">Cursos</h4>
-            <div className="space-y-4">
-              <a href="#" className="block text-white/80 hover:text-white transition-smooth">
-                Fundamentos del Acordeón
-              </a>
-              <a href="#" className="block text-white/80 hover:text-white transition-smooth">
-                Vallenato Clásico
-              </a>
-              <a href="#" className="block text-white/80 hover:text-white transition-smooth">
-                Maestría en Acordeón
-              </a>
-              <a href="#" className="block text-white/80 hover:text-white transition-smooth">
-                Consulta Gratuita
-              </a>
+            <h4 className="text-lg font-semibold mb-6 text-vallenato-gold">Sobre Andrea</h4>
+            <div className="space-y-3 text-sm">
+              <p className="text-white/80">
+                <strong>Formación:</strong> Maestra en Música - Pontificia Universidad Javeriana
+              </p>
+              <p className="text-white/80">
+                <strong>Especialidad:</strong> Acordeón Vallenato e Ingeniería de Sonido
+              </p>
+              <p className="text-white/80">
+                <strong>Experiencia:</strong> Talleres, grabación, mezcla y producción audiovisual
+              </p>
+              <p className="text-white/80">
+                <strong>Reconocimiento:</strong> Embajadora Cultural de Colombia
+              </p>
+              <p className="text-white/80">
+                <strong>Ubicación:</strong> Agustín Codazzi, Cesar - Colombia
+              </p>
             </div>
           </div>
 
@@ -85,20 +89,20 @@ const Footer = () => {
               <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-vallenato-gold flex-shrink-0" />
                 <div>
-                  <div className="text-white/80">maestro@academiavallenato.com</div>
+                  <div className="text-sm text-white/80">andrea@academiavallenato.com</div>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="h-5 w-5 text-vallenato-gold flex-shrink-0" />
                 <div>
-                  <div className="text-white/80">+57 123 456 7890</div>
+                  <div className="text-sm text-white/80">+57 316 4537031</div>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <MapPin className="h-5 w-5 text-vallenato-gold flex-shrink-0" />
                 <div>
-                  <div className="text-white/80">Valledupar, César</div>
-                  <div className="text-white/80">Colombia</div>
+                  <div className="text-sm text-white/80">Agustín Codazzi</div>
+                  <div className="text-sm text-white/80">Cesar, Colombia</div>
                 </div>
               </div>
             </div>
@@ -106,7 +110,7 @@ const Footer = () => {
             <div className="mt-8">
               <Button variant="hero" className="w-full shadow-elegant">
                 <Music className="h-4 w-4 mr-2" />
-                Comenzar Mi Aprendizaje
+                Explorar Cursos
               </Button>
             </div>
           </div>
@@ -117,7 +121,8 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
           <div className="text-center md:text-left">
             <p className="text-white/80">
-              © 2024 Academia Vallenato. Todos los derechos reservados.
+              © 2024 Andrea Paola Argote Chávez. Todos los derechos reservados. | 
+              <span className="text-vallenato-gold ml-2">Maestra en Música - Pontificia Universidad Javeriana</span>
             </p>
           </div>
           <div className="flex space-x-6 text-sm">

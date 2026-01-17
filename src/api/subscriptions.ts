@@ -133,19 +133,31 @@ export interface UserAchievement {
 }
 
 export async function getAchievements(): Promise<UserAchievement[]> {
-  const res = await fetch(`${API_URL}/api/achievements`, {
-    method: "GET",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-  });
+ let res: Response;
+
+  try {
+    res = await fetch(`${API_URL}/api/achievements/all`, {
+      method: "GET",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch {
+    // CORS / red / móvil
+    throw new Error("ERROR_RED");
+  }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Error al obtener logros");
+    let message = "Error al obtener logros";
+
+    try {
+      const err = await res.json();
+      message = err.message || message;
+    } catch {}
+
+    throw new Error(message);
   }
-  const data = await res.json();
-  console.log(data);
-  return data;
+
+  return res.json();
 }
 
 export async function createAchievement(achievement: Omit<UserAchievement, 'id' | 'created_at'>): Promise<UserAchievement> {

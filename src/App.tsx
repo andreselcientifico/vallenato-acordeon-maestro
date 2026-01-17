@@ -35,7 +35,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage"));
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
-const AdminRoute = lazy(() => import("./components/AdminRoute"));
+import AdminRoute from "./components/AdminRoute";
 const AchievementSystemInitializer = lazy(() => import("./components/AchievementSystemInitializer"));
 
 // Preload de rutas críticas

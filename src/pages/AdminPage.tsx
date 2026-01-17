@@ -162,6 +162,7 @@ const AdminPage = () => {
 
   // Estado para logros
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
+  const [loadingAchievements, setLoadingAchievements] = useState(false);
   const [currentAchievement, setCurrentAchievement] = useState<Partial<UserAchievement>>({
     name: "",
     description: "",
@@ -203,6 +204,7 @@ const AdminPage = () => {
 
     const loadAchievements = useCallback(async () => {
     try {
+      setLoadingAchievements(true);
       const achievementsData = await getAchievements();
       setAchievements(achievementsData);
     } catch (error) {
@@ -211,6 +213,8 @@ const AdminPage = () => {
         description: "No se pudieron cargar los logros",
         variant: "destructive",
       });
+    } finally {
+      setLoadingAchievements(false);
     }
   }, [toast]);
 
@@ -487,8 +491,7 @@ const AdminPage = () => {
     }
   };
 
-  const deleteAchievemen = async (achievementId: string) => {
-    deleteAchievement(achievementId)
+  const deleteAchievement = async (achievementId: string) => {
     const achievement = achievements.find(a => a.id === achievementId);
     setDeleteDialog({
       open: true,
@@ -496,8 +499,6 @@ const AdminPage = () => {
       id: achievementId,
       name: achievement?.name || 'este logro',
     });
-    // reload page
-    await loadAchievements();
   };
 
   const resetAchievementForm = () => {
@@ -521,7 +522,7 @@ const AdminPage = () => {
         await loadSubscriptionPlans();
         toast({ title: "Éxito", description: "Plan de suscripción eliminado correctamente" });
       } else if (type === 'achievement') {
-        await deleteAchievemen(id);
+        await deleteAchievement(id);
         await loadAchievements();
         toast({ title: "Éxito", description: "Logro eliminado correctamente" });
       }
@@ -1256,66 +1257,84 @@ const AdminPage = () => {
           <TabsContent value="achievements" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Logros</span>
-                  <Button onClick={() => { resetAchievementForm(); setActiveTab("create-achievement"); }}>
+                <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <span className="text-xl sm:text-2xl">Logros</span>
+                  <Button 
+                    onClick={() => { resetAchievementForm(); setActiveTab("create-achievement"); }}
+                    className="min-h-[44px] text-base w-full sm:w-auto"
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Crear Logro
                   </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {achievements.map((achievement) => (
-                    <Card key={achievement.id} className="relative">
-                      <CardHeader>
-                        <CardTitle className="text-lg flex items-center">
-                          {achievement.icon && <span className="mr-2">{achievement.icon}</span>}
-                          {achievement.name}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2 text-sm">
-                          <div>
-                            <span className="font-medium">Tipo de activación:</span> {achievement.trigger_type}
+                {loadingAchievements ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin h-8 w-8 border-4 border-t-transparent border-primary rounded-full"></div>
+                    <span className="ml-3 text-muted-foreground">Cargando logros...</span>
+                  </div>
+                ) : achievements.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">No hay logros creados aún.</p>
+                    <Button onClick={() => { resetAchievementForm(); setActiveTab("create-achievement"); }}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Crear primer logro
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {achievements.map((achievement) => (
+                      <Card key={achievement.id} className="relative">
+                        <CardHeader>
+                          <CardTitle className="text-lg flex items-center">
+                            {achievement.icon && <span className="mr-2 text-xl">{achievement.icon}</span>}
+                            <span className="text-sm sm:text-lg">{achievement.name}</span>
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="font-medium">Tipo de activación:</span> {achievement.trigger_type}
+                            </div>
+                            <div>
+                              <span className="font-medium">Valor requerido:</span> {achievement.trigger_value}
+                            </div>
+                            <div>
+                              <span className="font-medium">Estado:</span>{" "}
+                              <Badge variant={achievement.active ? "default" : "secondary"}>
+                                {achievement.active ? "Activo" : "Inactivo"}
+                              </Badge>
+                            </div>
                           </div>
-                          <div>
-                            <span className="font-medium">Valor requerido:</span> {achievement.trigger_value}
+                          <div className="flex gap-2 mt-4 flex-col sm:flex-row">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 min-h-[40px]"
+                              onClick={() => {
+                                setCurrentAchievement(achievement);
+                                setEditingAchievement(achievement.id);
+                                setActiveTab("create-achievement");
+                              }}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteAchievement(achievement.id)}
+                              className="text-destructive hover:bg-destructive/10 min-h-[40px] sm:min-h-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                          <div>
-                            <span className="font-medium">Estado:</span>{" "}
-                            <Badge variant={achievement.active ? "default" : "secondary"}>
-                              {achievement.active ? "Activo" : "Inactivo"}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => {
-                              setCurrentAchievement(achievement);
-                              setEditingAchievement(achievement.id);
-                              setActiveTab("create-achievement");
-                            }}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteAchievemen(achievement.id)}
-                            className="text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1459,13 +1478,14 @@ const AdminPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Nombre *</Label>
                     <Input
                       value={currentAchievement.name}
                       onChange={(e) => setCurrentAchievement({ ...currentAchievement, name: e.target.value })}
                       placeholder="Primer Curso Completado"
+                      className="min-h-[44px] text-base"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1474,6 +1494,7 @@ const AdminPage = () => {
                       value={currentAchievement.icon}
                       onChange={(e) => setCurrentAchievement({ ...currentAchievement, icon: e.target.value })}
                       placeholder="🏆"
+                      className="min-h-[44px] text-base"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1482,10 +1503,10 @@ const AdminPage = () => {
                       value={currentAchievement.trigger_type}
                       onValueChange={(value) => setCurrentAchievement({ ...currentAchievement, trigger_type: value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="min-h-[44px]">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-[200px]">
                         <SelectItem value="course_completed">Curso completado</SelectItem>
                         <SelectItem value="lesson_completed">Lección completada</SelectItem>
                         <SelectItem value="login_streak">Racha de logins</SelectItem>
@@ -1501,6 +1522,8 @@ const AdminPage = () => {
                       value={currentAchievement.trigger_value}
                       onChange={(e) => setCurrentAchievement({ ...currentAchievement, trigger_value: parseInt(e.target.value) || 1 })}
                       placeholder="1"
+                      className="min-h-[44px] text-base"
+                      inputMode="numeric"
                     />
                   </div>
                 </div>
@@ -1512,25 +1535,27 @@ const AdminPage = () => {
                     onChange={(e) => setCurrentAchievement({ ...currentAchievement, description: e.target.value })}
                     placeholder="Descripción del logro..."
                     rows={3}
+                    className="min-h-[100px] text-base resize-none"
                   />
                 </div>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3 py-2">
                   <input
                     type="checkbox"
                     id="achievement-active"
                     checked={currentAchievement.active}
                     onChange={(e) => setCurrentAchievement({ ...currentAchievement, active: e.target.checked })}
+                    className="w-5 h-5"
                   />
-                  <Label htmlFor="achievement-active">Logro activo</Label>
+                  <Label htmlFor="achievement-active" className="text-base cursor-pointer">Logro activo</Label>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button onClick={saveAchievement}>
+                <div className="flex gap-3 flex-col sm:flex-row">
+                  <Button onClick={saveAchievement} className="min-h-[44px] text-base flex-1">
                     <Save className="h-4 w-4 mr-2" />
                     {editingAchievement ? "Actualizar" : "Crear"} Logro
                   </Button>
-                  <Button variant="outline" onClick={resetAchievementForm}>
+                  <Button variant="outline" onClick={resetAchievementForm} className="min-h-[44px] text-base">
                     Cancelar
                   </Button>
                 </div>

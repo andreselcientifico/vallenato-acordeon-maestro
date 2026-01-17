@@ -1,124 +1,192 @@
-// Service Worker básico para cache y optimización
-const CACHE_NAME = 'vallenato-cache-v1';
-const STATIC_CACHE = 'vallenato-static-v1';
+// sw.js
+const STATIC_CACHE = "vallenato-static-v4";
+const RUNTIME_CACHE = "vallenato-runtime-v4";
+const API_CACHE = "vallenato-api-v4";
+const MAX_CACHE_ITEMS = 50;
 
-// Recursos a cachear
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  // Cachear fuentes críticas
-  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
-];
-
-// Recursos dinámicos a cachear
-const DYNAMIC_CACHE_PATTERNS = [
-  /\/api\/courses/,  // Cursos
-  /\/api\/profile/,  // Perfil de usuario
-  /\/api\/subscriptions/, // Suscripciones
-  /\.(png|jpg|jpeg|svg|webp|gif)$/i, // Imágenes
-];
-
-// Instalar Service Worker
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
-  // Forzar activación inmediata
+/* ============================
+   INSTALL
+   ============================ */
+self.addEventListener("install", (event) => {
+  console.log("🔧 Service Worker: Installing new version");
   self.skipWaiting();
 });
 
-// Activar Service Worker
-self.addEventListener('activate', (event) => {
+/* ============================
+   ACTIVATE
+   ============================ */
+self.addEventListener("activate", (event) => {
+  console.log("🚀 Service Worker: Activating - Cleaning old caches");
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then((keys) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== STATIC_CACHE && cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
+        keys
+          .filter((key) => ![STATIC_CACHE, RUNTIME_CACHE, API_CACHE].includes(key))
+          .map((key) => {
+            console.log(`🗑️ Deleting old cache: ${key}`);
+            return caches.delete(key);
+          })
       );
     })
   );
+
   self.clients.claim();
 });
 
-// Interceptar requests
-self.addEventListener('fetch', (event) => {
+/* ============================
+   UTILITY FUNCTIONS
+   ============================ */
+
+// Limpiar cache cuando excede límite
+async function cleanCache(cacheName, maxItems = MAX_CACHE_ITEMS) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  
+  if (keys.length > maxItems) {
+    // Borrar los items más antiguos
+    for (let i = 0; i < keys.length - maxItems; i++) {
+      await cache.delete(keys[i]);
+    }
+  }
+}
+
+// Crear respuesta de error offline
+function createErrorResponse(status = 503, message = "Offline") {
+  return new Response(
+    JSON.stringify({ error: message, offline: true }),
+    { status, headers: { "Content-Type": "application/json" } }
+  );
+}
+
+/* ============================
+   FETCH EVENT
+   ============================ */
+self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Solo cachear requests GET
-  if (request.method !== 'GET') return;
+  // ❌ Solo maneja GET
+  if (request.method !== "GET") {
+    return;
+  }
 
-  // Cache First para recursos estáticos
-  if (STATIC_ASSETS.some(asset => request.url.includes(asset))) {
+  // ❌ NO cachear HTML (SPA necesita backend siempre)
+  if (request.headers.get("accept")?.includes("text/html")) {
     event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        return cachedResponse || fetch(request).then((response) => {
-          const responseClone = response.clone();
-          caches.open(STATIC_CACHE).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return response;
-        });
+      fetch(request).catch(() => {
+        // Si falla el HTML, devolver offline
+        return createErrorResponse();
       })
     );
     return;
   }
 
-  // Network First para API calls con fallback a cache
-  if (DYNAMIC_CACHE_PATTERNS.some(pattern => pattern.test(request.url))) {
+  // ❌ NO cachear rutas SPA privadas/pesadas (sin fallback)
+  if (
+    url.pathname.startsWith("/cursos") ||
+    url.pathname.startsWith("/admin") ||
+    url.pathname.startsWith("/perfil") ||
+    url.pathname.startsWith("/suscripciones") ||
+    url.pathname.startsWith("/mis-cursos") ||
+    url.pathname.startsWith("/mis-logros")
+  ) {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Cachear respuesta exitosa
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Fallback a cache si falla la red
-          return caches.match(request);
-        })
+      fetch(request).catch(() => createErrorResponse())
     );
     return;
   }
 
-  // Stale While Revalidate para otros recursos
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request).then((networkResponse) => {
-        if (networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
+  // ❌ NO cachear autenticación (siempre network)
+  if (
+    url.pathname.startsWith("/api/auth") ||
+    url.pathname.startsWith("/api/users/me")
+  ) {
+    event.respondWith(
+      fetch(request).catch(() => createErrorResponse())
+    );
+    return;
+  }
+
+  // ✅ Assets estáticos reales → Cache First
+  if (
+    request.destination === "script" ||
+    request.destination === "style" ||
+    request.destination === "image" ||
+    request.destination === "font"
+  ) {
+    event.respondWith(
+      caches.match(request).then(async (cached) => {
+        if (cached) {
+          return cached;
         }
-        return networkResponse;
-      });
 
-      return cachedResponse || fetchPromise;
-    })
-  );
-});
+        try {
+          const response = await fetch(request);
+          
+          // Solo cachear si es exitoso (status 200)
+          if (response && response.status === 200) {
+            const cache = await caches.open(STATIC_CACHE);
+            cache.put(request, response.clone());
+            await cleanCache(STATIC_CACHE);
+          }
+          
+          return response;
+        } catch (error) {
+          console.error(`❌ Fetch error for ${request.url}:`, error);
+          // Retornar respuesta en cache si está disponible
+          return cached || createErrorResponse();
+        }
+      })
+    );
+    return;
+  }
 
-// Limpiar cache periódicamente
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'CLEAN_CACHE') {
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          return caches.delete(cacheName);
+  // 🟡 API pública → Network First con timeout
+  if (url.pathname.startsWith("/api")) {
+    event.respondWith(
+      Promise.race([
+        fetch(request)
+          .then((response) => {
+            // ✅ Solo cachear si es exitoso (2xx)
+            if (response && response.status >= 200 && response.status < 300) {
+              const cache = caches.open(API_CACHE);
+              cache.then((c) => {
+                c.put(request, response.clone());
+                cleanCache(API_CACHE);
+              });
+            } else if (response && response.status >= 400) {
+              // ❌ NO cachear errores (4xx, 5xx)
+              console.warn(`API error ${response.status}: ${request.url}`);
+            }
+            return response;
+          }),
+        // Timeout de 8 segundos
+        new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(null);
+          }, 8000);
         })
-      );
-    });
+      ])
+        .then(async (response) => {
+          // Si timeout o error, usar cache
+          if (!response) {
+            console.warn(`⏱️ Timeout/Failed - Using cache for: ${request.url}`);
+            const cached = await caches.match(request);
+            return cached || createErrorResponse(504, "Request Timeout");
+          }
+          return response;
+        })
+        .catch(async (error) => {
+          console.error(`🔴 API Fetch error: ${request.url}`, error);
+          // Si error de red, intentar cache
+          const cached = await caches.match(request);
+          if (cached) {
+            console.log(`✅ Returning cached response for: ${request.url}`);
+            return cached;
+          }
+          return createErrorResponse();
+        })
+    );
+    return;
   }
 });

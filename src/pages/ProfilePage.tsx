@@ -220,8 +220,7 @@ const ProfilePage = () => {
     const confirmed = window.confirm(
       "⚠️ ADVERTENCIA: Al cancelar tu suscripción:\n\n" +
       "• Perderás acceso a todos los cursos que no tienes asignados actualmente\n" +
-      "• Solo mantendrás acceso a los cursos que ya has empezado\n" +
-      "• Tu suscripción permanecerá activa hasta la fecha de expiración\n\n" +
+      "• Solo mantendrás acceso a los cursos que has comprado\n" +
       "¿Estás seguro de que quieres cancelar tu suscripción?"
     );
 
@@ -233,7 +232,7 @@ const ProfilePage = () => {
       await cancelSubscription(subscriptionId);
       toast({
         title: "Suscripción cancelada",
-        description: "Tu suscripción ha sido cancelada. Mantendrás acceso hasta la fecha de expiración.",
+        description: "Tu suscripción ha sido cancelada. Mantendrás acceso a los cursos comprados.",
       });
       // Recargar suscripciones
       const subs = await getUserSubscriptions();
@@ -329,8 +328,8 @@ const ProfilePage = () => {
           {/* Profile Header */}
           <Card className="p-4 sm:p-8 mb-4 sm:mb-8">
             <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
-              <div className="relative">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-accent rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold">
+              <div className="relative flex-shrink-0">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gradient-accent rounded-full flex items-center justify-center text-white text-3xl sm:text-4xl font-bold">
                   {selectedAvatar || (userInfo?.name
                     ? userInfo.name
                         .split(" ")
@@ -344,43 +343,43 @@ const ProfilePage = () => {
                   trigger={
                     <Button
                       size="sm"
-                      className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0"
+                      className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 rounded-full w-8 h-8 sm:w-10 sm:h-10 p-0"
                       variant="outline"
                     >
-                      <Camera className="h-4 w-4" />
+                      <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   }
                 />
               </div>
 
               <div className="flex-1 text-center sm:text-left w-full">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0 gap-2 sm:gap-4">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-bold text-primary">
                       {userInfo?.name}
                     </h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Estudiante de Acordeón
                     </p>
                   </div>
                   <Button
                     variant={isEditing ? "outline" : "default"}
                     onClick={() => setIsEditing(!isEditing)}
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto text-xs sm:text-sm"
                   >
                     {isEditing ? (
-                      <X className="h-4 w-4 mr-2" />
+                      <X className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                     ) : (
-                      <Edit3 className="h-4 w-4 mr-2" />
+                      <Edit3 className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                     )}
                     {isEditing ? "Cancelar" : "Editar Perfil"}
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                   <div className="flex items-center justify-center sm:justify-start space-x-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>
+                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate">
                       Miembro desde {userInfo.created_at ?
                         new Date(userInfo.created_at).toLocaleDateString('es-ES', {
                           year: 'numeric',
@@ -391,12 +390,12 @@ const ProfilePage = () => {
                     </span>
                   </div>
                   <div className="flex items-center justify-center sm:justify-start space-x-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{userInfo.location}</span>
+                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate">{userInfo.location}</span>
                   </div>
                   <div className="flex items-center justify-center sm:justify-start space-x-2">
-                    <Trophy className="h-4 w-4 text-muted-foreground" />
-                    <span>{achievements.filter(a => a.earned).length} logros obtenidos</span>
+                    <Trophy className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate">{achievements.filter(a => a.earned).length} logros</span>
                   </div>
                 </div>
               </div>

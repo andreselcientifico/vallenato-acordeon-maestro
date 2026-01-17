@@ -31,17 +31,17 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+      <DialogContent className="max-w-3xl max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Selecciona tu Avatar</DialogTitle>
         </DialogHeader>
         <ScrollArea className="h-[60vh] pr-4">
-          <div className="grid grid-cols-8 gap-4 p-4">
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 sm:gap-3 md:gap-4 p-4">
             {XBOX_AVATARS.map((avatar, index) => (
               <Button
                 key={index}
                 variant={currentAvatar === avatar ? "default" : "outline"}
-                className="h-16 w-16 text-2xl hover:scale-110 transition-transform"
+                className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 text-lg sm:text-xl md:text-2xl hover:scale-110 transition-transform p-0 flex items-center justify-center"
                 onClick={() => handleSelect(avatar)}
               >
                 {avatar}

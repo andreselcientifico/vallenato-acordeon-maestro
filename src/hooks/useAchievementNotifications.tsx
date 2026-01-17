@@ -1,14 +1,14 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import AchievementNotification from "@/components/AchievementNotification";
-import { Achievement } from "@/api/subscriptions";
+import { UserAchievement } from "@/api/subscriptions";
 
 interface AchievementNotificationItem {
   id: string;
-  achievement: Achievement;
+  achievement: UserAchievement;
 }
 
 interface AchievementNotificationContextType {
-  showAchievement: (achievement: Achievement) => void;
+  showAchievement: (achievement: UserAchievement) => void;
 }
 
 const AchievementNotificationContext = createContext<AchievementNotificationContextType | undefined>(undefined);
@@ -28,7 +28,7 @@ interface AchievementNotificationProviderProps {
 export const AchievementNotificationProvider = ({ children }: AchievementNotificationProviderProps) => {
   const [notifications, setNotifications] = useState<AchievementNotificationItem[]>([]);
 
-  const showAchievement = (achievement: Achievement) => {
+  const showAchievement = (achievement: UserAchievement) => {
     const id = `${achievement.id}-${Date.now()}`;
     const notification: AchievementNotificationItem = {
       id,

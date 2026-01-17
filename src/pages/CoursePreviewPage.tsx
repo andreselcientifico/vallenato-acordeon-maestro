@@ -21,6 +21,8 @@ import {
   MonitorPlay,
   ClipboardCheck,
   Lock,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -73,54 +75,26 @@ const LessonContentRenderer: React.FC<LessonContentRendererProps> = ({
     return (
       <>
         {/* Reproductor de Video */}
-        <div className="aspect-video bg-black relative">
+        <div className="aspect-video bg-black relative w-full">
           <ReactPlayer
-            src={lesson.content_url} 
-            ref={(videoElement) => {
-              if (videoElement) {
-                if (isPlaying) {
-                  videoElement.play();
-                } else {
-                  videoElement.pause();
-                }
-              }
-            }}
-            autoPlay={isPlaying}
+            src={lesson.content_url}
+            playing={isPlaying}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
+            onEnded={() => setIsPlaying(false)}
+            controls={true}
+            light={false}
+            playsInline={true}
+            pip={true}
             width="100%"
             height="100%"
-            className="position:absolute; top:0; left:0;"
-          >
-            Tu navegador no soporta la etiqueta de video.
-          </ReactPlayer>
-        </div>
-        
-        {/* Controles de Video */}
-        <div className="p-4 bg-muted/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
-                <SkipBack className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setIsPlaying(!isPlaying)}>
-                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              </Button>
-              <Button variant="ghost" size="sm">
-                <SkipForward className="h-4 w-4" />
-              </Button>
-              <span className="text-sm text-muted-foreground">0:00 / {lesson.duration || '0:00'}</span>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm">
-                <Volume2 className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm">
-                <Maximize className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+            config={{
+              youtube: {
+                rel: 0,
+                fs: 1,
+              }
+            }}
+          />
         </div>
       </>
     );
@@ -155,6 +129,7 @@ const CoursePreviewPage = () => {
   const [courseRating, setCourseRating] = useState<CourseRating | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Lógica de carga de datos
   useEffect(() => {
@@ -290,21 +265,30 @@ const CoursePreviewPage = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={() => navigate(-1)}>
-                ← Volver
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 relative">
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-wrap">
+              <Button variant="ghost" onClick={() => navigate(-1)} className="flex-shrink-0 h-8 w-8 px-0 sm:h-10 sm:w-auto sm:px-2">
+                <span className="hidden sm:inline">← Volver</span>
+                <span className="sm:hidden">←</span>
               </Button>
-              <div>
-                <h1 className="text-2xl font-bold">{courseData.title}</h1>
-                <p className="text-muted-foreground">Vista previa del curso</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="md:hidden flex-shrink-0 h-8 w-8 p-0"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              </Button>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm sm:text-lg font-bold truncate">{courseData.title}</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">Vista previa del curso</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant="secondary">Vista Previa</Badge>
-              <Button onClick={() => navigate("/cursos")}>
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
+              <Badge variant="secondary" className="text-xs sm:text-sm">Vista Previa</Badge>
+              <Button onClick={() => navigate("/cursos")} className="text-xs sm:text-sm w-full sm:w-auto">
                 Comprar Curso
               </Button>
             </div>
@@ -312,66 +296,69 @@ const CoursePreviewPage = () => {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-6">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 mt-0">
+        <div className="flex relative gap-3 sm:gap-6 min-h-[calc(100vh-80px)]">
           {/* Sidebar con módulos y lecciones */}
-          <aside className="w-80 flex-shrink-0">
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Contenido del Curso</h3>
-                <Badge variant="outline" className="text-center">{courseData.total_lessons} lecciones</Badge>
+          <aside className={`fixed inset-y-0 left-0 z-40 w-64 sm:w-72 md:w-80 bg-background border-r border-border flex-shrink-0 transform transition-transform duration-300 md:relative md:translate-x-0 md:block mt-[60px] md:mt-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className="p-3 sm:p-4 h-full md:h-auto bg-background border-r border-border">
+              <div className="flex flex-col gap-2 sm:gap-3 mb-4">
+                <h3 className="font-semibold text-sm sm:text-base">Contenido del Curso</h3>
+                <Badge variant="outline" className="text-center text-xs sm:text-sm">{courseData.total_lessons} lecciones</Badge>
               </div>
               
               <div className="mb-4">
-                <div className="flex items-center justify-between text-sm mb-2">
+                <div className="flex items-center justify-between text-xs sm:text-sm mb-2">
                   <span>Progreso</span>
                   <span>{getProgressPercentage}%</span>
                 </div>
                 <Progress value={getProgressPercentage} className="h-2" />
               </div>
 
-              <ScrollArea className="h-[600px]">
+              <ScrollArea className="h-[calc(100vh-18rem)] md:h-[600px]">
                 <div className="space-y-2">
                   {courseData.modules.map((module) => (
                     <div key={module.id}>
                       <Button
                         variant="ghost"
-                        className="w-full justify-between p-3 h-auto"
+                        className="w-full justify-between p-2 sm:p-3 h-auto text-xs sm:text-sm"
                         onClick={() => toggleModule(module.id)}
                       >
-                        <span className="font-medium text-left">{module.title}</span>
+                        <span className="font-medium text-left truncate">{module.title}</span>
                         {expandedModules.includes(module.id) ? (
-                          <ChevronDown className="h-4 w-4" />
+                          <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                         ) : (
-                          <ChevronRight className="h-4 w-4" />
+                          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                         )}
                       </Button>
                       
                       {expandedModules.includes(module.id) && (
-                        <div className="ml-4 space-y-1 mt-2">
+                        <div className="ml-3 sm:ml-4 space-y-1 mt-2">
                           {module.lessons.map((lesson) => (
                             <Button
                               key={lesson.id}
                               variant={currentLesson.id === lesson.id ? "secondary" : "ghost"}
-                              className={`w-full justify-start p-3 h-auto ${
+                              className={`w-full justify-start p-2 sm:p-3 h-auto text-xs sm:text-sm ${
                                 isLessonLocked(lesson) ? 'opacity-50' : ''
                               }`}
-                              onClick={() => selectLesson(lesson)}
+                              onClick={() => {
+                                selectLesson(lesson);
+                                setSidebarOpen(false);
+                              }}
                               disabled={isLessonLocked(lesson)}
                             >
-                              <div className="flex items-center space-x-3 w-full">
+                              <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
                                 <div className="flex-shrink-0">
                                   {isLessonLocked(lesson) ? (
-                                    <Lock className="h-4 w-4 text-muted-foreground" />
+                                    <Lock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                                   ) : (
                                     getLessonIcon(lesson)
                                   )}
                                 </div>
-                                <div className="flex-1 text-left">
-                                  <div className="text-sm font-medium">{lesson.title}</div>
-                                  <div className="flex items-center text-xs text-muted-foreground">
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    {lesson.duration || 'N/A'}
+                                <div className="flex-1 text-left min-w-0">
+                                  <div className="text-xs sm:text-sm font-medium truncate">{lesson.title}</div>
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Clock className="h-2 w-2 sm:h-3 sm:w-3 flex-shrink-0" />
+                                    <span className="truncate">{lesson.duration || 'N/A'}</span>
                                   </div>
                                 </div>
                               </div>
@@ -383,12 +370,20 @@ const CoursePreviewPage = () => {
                   ))}
                 </div>
               </ScrollArea>
-            </Card>
+            </div>
           </aside>
 
+          {/* Overlay para móviles */}
+          {sidebarOpen && (
+            <div 
+              className="fixed inset-0 z-30 bg-black/50 md:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+
           {/* Contenido Principal */}
-          <main className="flex-1">
-            <div className="space-y-6">
+          <main className="flex-1 min-h-screen overflow-hidden">
+            <div className="space-y-3 sm:space-y-6 overflow-y-auto h-[calc(100vh-130px)]">
               {/* Reproductor / Contenido de la Lección */}
               <Card className="overflow-hidden">
                 <LessonContentRenderer
@@ -400,18 +395,18 @@ const CoursePreviewPage = () => {
               </Card>
 
               {/* Información de la Lección */}
-              <Card className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold mb-2">{currentLesson.title}</h2>
-                    <p className="text-muted-foreground">{currentLesson.description}</p> 
+              <Card className="p-3 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-2 sm:gap-4">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-lg sm:text-2xl font-bold mb-2">{currentLesson.title}</h2>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{currentLesson.description}</p> 
                   </div>
-                  <Badge variant="secondary">
+                  <Badge variant="secondary" className="text-xs sm:text-sm w-fit whitespace-nowrap">
                     Vista Previa
                   </Badge>
                 </div>
                 
-                <div className="flex items-center space-x-6 text-sm text-muted-foreground">
+                <div className="flex flex-col gap-2 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-1" />
                     Duración: {currentLesson.duration || 'N/A'}
@@ -424,9 +419,9 @@ const CoursePreviewPage = () => {
               </Card>
 
               {/* Sección de Comentarios y Calificación */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <Star className="h-5 w-5 mr-2" />
+              <Card className="p-3 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold mb-4 flex items-center">
+                  <Star className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Calificación del Curso
                 </h3>
                 
@@ -454,19 +449,19 @@ const CoursePreviewPage = () => {
                 
                 <Separator className="my-4" />
                 
-                <h3 className="text-lg font-semibold mb-4 flex items-center">
-                  <MessageCircle className="h-5 w-5 mr-2" />
+                <h3 className="text-base sm:text-lg font-semibold mb-4 flex items-center">
+                  <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Comentarios ({comments.length})
                 </h3>
 
                 {/* Lista de Comentarios */}
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {comments.slice(0, 3).map((comment) => (
-                    <div key={comment.id} className="flex space-x-3 p-4 rounded-lg bg-muted/30">
-                      <div className="text-2xl">👤</div>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <span className="font-medium text-sm">{comment.user_name}</span>
+                    <div key={comment.id} className="flex gap-2 sm:gap-3 p-2 sm:p-4 rounded-lg bg-muted/30">
+                      <div className="text-lg sm:text-2xl flex-shrink-0">👤</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                          <span className="font-medium text-xs sm:text-sm truncate">{comment.user_name}</span>
                           <span className="text-xs text-muted-foreground">
                             {new Date(comment.created_at).toLocaleDateString()}
                           </span>
@@ -485,12 +480,12 @@ const CoursePreviewPage = () => {
                             </div>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{comment.content}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground break-words">{comment.content}</p>
                       </div>
                     </div>
                   ))}
                   {comments.length > 3 && (
-                    <div className="text-center text-sm text-muted-foreground">
+                    <div className="text-center text-xs sm:text-sm text-muted-foreground">
                       Y {comments.length - 3} comentarios más...
                     </div>
                   )}
@@ -498,13 +493,13 @@ const CoursePreviewPage = () => {
               </Card>
 
               {/* Call to Action */}
-              <Card className="p-8 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+              <Card className="p-4 sm:p-8 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
                 <div className="text-center">
-                  <h3 className="text-2xl font-bold mb-4">¿Te gustó lo que viste?</h3>
-                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  <h3 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4">¿Te gustó lo que viste?</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 max-w-md mx-auto">
                     Accede a todo el contenido del curso, incluyendo todas las lecciones, ejercicios y soporte personalizado.
                   </p>
-                  <Button size="lg" onClick={() => navigate("/cursos")}>
+                  <Button size="lg" onClick={() => navigate("/cursos")} className="w-full sm:w-auto">
                     Comprar Curso Completo
                   </Button>
                 </div>

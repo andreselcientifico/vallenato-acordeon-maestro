@@ -24,19 +24,30 @@ export default function AdminRoute({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const u = await getCurrentUser();
-        setUser(u);
-      } catch {
-        // Si hay cualquier error al consultar el backend,
-        // lo tratamos como usuario no autenticado.
+  let mounted = true;
+
+  (async () => {
+    try {
+      const u = await getCurrentUser();
+      if (mounted) setUser(u);
+    } catch (err: any) {
+      // Si el backend no responde → estado error
+      if (err?.response?.status === 401) {
         setUser(null);
-      } finally {
-        setLoading(false);
+      } else {
+        console.error("Error validando sesión:", err);
+        setUser("ERROR" as any);
       }
-    })();
-  }, []);
+    } finally {
+      if (mounted) setLoading(false);
+    }
+  })();
+
+  return () => {
+    mounted = false;
+  };
+}, []);
+
 
   // ===============================
   // 🌀 ESTADO DE CARGA
@@ -54,7 +65,7 @@ export default function AdminRoute({ children }) {
   // 🚪 NO LOGUEADO
   // ===============================
   if (!user) {
-    return <Navigate to="/NotFound" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // ===============================
@@ -64,6 +75,15 @@ export default function AdminRoute({ children }) {
     return <Navigate to="/perfil" replace />;
   }
 
+  if (user === "ERROR") {
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <p className="text-red-500">
+        No se pudo verificar la sesión. Intenta recargar.
+      </p>
+    </div>
+  );
+}
   // ===============================
   // 🎉 PERMITIDO
   // ===============================

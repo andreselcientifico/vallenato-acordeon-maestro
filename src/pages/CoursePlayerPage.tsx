@@ -21,6 +21,8 @@ import {
   MonitorPlay,
   ClipboardCheck,
   Trash2,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -70,66 +72,27 @@ const LessonContentRenderer: React.FC<LessonContentRendererProps> = ({
   if (isVideo) {
     return (
       <>
-        {/* Reproductor de Video (simple iframe o <video>) */}
-        <div className="aspect-video bg-black relative">
+        {/* Reproductor de Video */}
+        <div className="aspect-video bg-black relative w-full">
           <ReactPlayer
-            src={lesson.content_url} 
-            ref={(videoElement) => {
-              if (videoElement) {
-                if (isPlaying) {
-                  videoElement.play(); // Reproducir
-                } else {
-                  videoElement.pause(); // Pausar
-                }
-              }
-            }}
-            autoPlay={isPlaying}
+            src={lesson.content_url}
+            playing={isPlaying}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
+            onEnded={() => setIsPlaying(false)}
+            controls={true}
+            light={false}
+            playsInline={true}
+            pip={true}
             width="100%"
             height="100%"
-            className="position:absolute; top:0; left:0;"
-          >
-            Tu navegador no soporta la etiqueta de video.
-          </ReactPlayer>
-        </div>
-        
-        {/* Controles de Video (Opcional si usas los controles nativos del <video>) */}
-        <div className="p-4 bg-muted/50">
-          <div className="flex items-center justify-between">
-            {/* Controles básicos para el ejemplo */}
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
-                <SkipBack className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setIsPlaying(!isPlaying)}>
-                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              </Button>
-              <Button variant="ghost" size="sm">
-                <SkipForward className="h-4 w-4" />
-              </Button>
-              <span className="text-sm text-muted-foreground">0:00 / {lesson.duration || '0:00'}</span>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm">
-                <Volume2 className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm">
-                <Maximize className="h-4 w-4" />
-              </Button>
-              {/* Botón de Completado */}
-              {!lesson.completed && (
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={markComplete}
-                >
-                  Marcar como Completado
-                </Button>
-              )}
-            </div>
-          </div>
+            config={{
+              youtube: {
+                rel: 0,
+                fs: 1,
+              }
+            }}
+          />
         </div>
       </>
     );
@@ -192,6 +155,7 @@ const CoursePlayerPage = () => {
   const [courseRating, setCourseRating] = useState<CourseRating | null>(null);
   const [userRating, setUserRating] = useState<number | null>(null);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Lógica de carga de datos
 useEffect(() => {
@@ -466,45 +430,57 @@ useEffect(() => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate(-1)}
-              className="text-muted-foreground hover:text-primary"
-            >
-              ← Volver
-            </Button>
-            <Separator orientation="vertical" className="h-6" />
-            <div>
-              <h1 className="font-semibold text-lg">{courseData.title}</h1>
-              <p className="text-sm text-muted-foreground">{courseData.instructor}</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <div className="text-sm font-medium">
-                {courseData.completed_lessons} de {courseData.total_lessons} lecciones
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate(-1)}
+                className="text-muted-foreground hover:text-primary flex-shrink-0 h-8 w-8 px-0 sm:h-10 sm:w-auto sm:px-2"
+              >
+                <span className="hidden sm:inline">← Volver</span>
+                <span className="sm:hidden">←</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="md:hidden flex-shrink-0 h-8 w-8 p-0"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              </Button>
+              <Separator orientation="vertical" className="h-6 hidden sm:block" />
+              <div className="min-w-0 flex-1">
+                <h1 className="font-semibold text-sm sm:text-lg truncate">{courseData.title}</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{courseData.instructor}</p>
               </div>
-              <Progress value={getProgressPercentage} className="w-32" />
             </div>
-            <Badge variant="secondary">
-              {getProgressPercentage}% completado
-            </Badge>
+            <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-between sm:justify-end">
+              <div className="text-right text-xs sm:text-sm">
+                <div className="font-medium whitespace-nowrap">
+                  {courseData.completed_lessons}/{courseData.total_lessons}
+                </div>
+                <Progress value={getProgressPercentage} className="w-20 sm:w-32 h-1" />
+              </div>
+              <Badge variant="secondary" className="text-xs sm:text-sm py-1 px-2 whitespace-nowrap">
+                {getProgressPercentage}%
+              </Badge>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex relative min-h-screen bg-background">
         {/* Sidebar - Módulos y Lecciones */}
-        <aside className="w-80 border-r bg-muted/30 min-h-screen">
-          <div className="p-4">
-            <h2 className="font-semibold mb-4 flex items-center">
-              <BookOpen className="h-5 w-5 mr-2" />
-              Contenido del Curso
+        <aside className={`fixed inset-y-0 left-0 z-40 w-64 sm:w-72 md:w-80 border-r border-border bg-background min-h-screen transform transition-transform duration-300 md:relative md:translate-x-0 md:block ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="p-3 sm:p-4 pt-20 md:pt-4 h-full flex flex-col">
+            <h2 className="font-semibold mb-4 text-sm sm:text-base flex items-center">
+              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+              <span className="hidden sm:inline">Contenido del Curso</span>
+              <span className="sm:hidden">Módulos</span>
             </h2>
             
-            <ScrollArea className="h-[calc(100vh-12rem)]">
+            <ScrollArea className="flex-1">
               <div className="space-y-2">
                 {courseData.modules.map((module) => (
                   <Card key={module.id} className="p-0 overflow-hidden">
@@ -543,7 +519,10 @@ useEffect(() => {
                                 ? 'border-l-primary bg-primary/5' 
                                 : 'border-l-transparent'
                             }`}
-                            onClick={() => selectLesson(lesson)}
+                            onClick={() => {
+                              selectLesson(lesson);
+                              setSidebarOpen(false); // Cerrar sidebar en móviles
+                            }}
                           >
                             <div className="flex items-center space-x-3 w-full">
                               <div className="flex-shrink-0">
@@ -575,9 +554,17 @@ useEffect(() => {
           </div>
         </aside>
 
+        {/* Overlay para móviles */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 z-30 bg-black/50 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Contenido Principal */}
-        <main className="flex-1">
-          <div className="p-6 space-y-6">
+        <main className="flex-1 min-h-screen overflow-hidden flex flex-col bg-background">
+          <div className="p-2 sm:p-4 md:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
             {/* Reproductor / Contenido de la Lección */}
             <Card className="overflow-hidden">
               <LessonContentRenderer
@@ -589,19 +576,19 @@ useEffect(() => {
             </Card>
 
             {/* Información de la Lección */}
-            <Card className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">{currentLesson.title}</h2>
+            <Card className="p-3 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-2 sm:gap-4">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg sm:text-2xl font-bold mb-2">{currentLesson.title}</h2>
                   {/* Usamos currentLesson.description, que viene del BE */}
-                  <p className="text-muted-foreground">{currentLesson.description}</p> 
+                  <p className="text-xs sm:text-sm text-muted-foreground">{currentLesson.description}</p> 
                 </div>
-                <Badge variant={currentLesson.completed ? "default" : "secondary"}>
+                <Badge variant={currentLesson.completed ? "default" : "secondary"} className="text-xs sm:text-sm w-fit whitespace-nowrap">
                   {currentLesson.completed ? "Completado" : "En progreso"}
                 </Badge>
               </div>
               
-              <div className="flex items-center space-x-6 text-sm text-muted-foreground">
+              <div className="flex flex-col gap-2 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-1" />
                   Duración: {currentLesson.duration || 'N/A'}
@@ -614,9 +601,9 @@ useEffect(() => {
             </Card>
 
             {/* Sección de Comentarios */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Star className="h-5 w-5 mr-2" />
+            <Card className="p-3 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-4 flex items-center">
+                <Star className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 Calificación del Curso
               </h3>
               
@@ -665,8 +652,8 @@ useEffect(() => {
               
               <Separator className="my-4" />
               
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <MessageCircle className="h-5 w-5 mr-2" />
+              <h3 className="text-base sm:text-lg font-semibold mb-4 flex items-center">
+                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 Comentarios y Discusión
               </h3>
               
@@ -676,9 +663,9 @@ useEffect(() => {
                   placeholder="Escribe tu comentario o pregunta sobre esta lección..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  className="mb-3"
+                  className="mb-3 text-sm"
                 />
-                <Button onClick={addComment} disabled={!newComment.trim() || loadingComments}>
+                <Button onClick={addComment} disabled={!newComment.trim() || loadingComments} className="w-full sm:w-auto">
                   {loadingComments ? "Publicando..." : "Publicar Comentario"}
                 </Button>
               </div>
@@ -686,12 +673,12 @@ useEffect(() => {
               {/* Lista de Comentarios */}
               <div className="space-y-4">
                 {comments.map((comment) => (
-                  <div key={comment.id} className="flex space-x-3 p-4 rounded-lg bg-muted/30">
-                    <div className="text-2xl">👤</div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-sm">{comment.user_name}</span>
+                  <div key={comment.id} className="flex gap-2 sm:gap-3 p-2 sm:p-4 rounded-lg bg-muted/30">
+                    <div className="text-lg sm:text-2xl flex-shrink-0">👤</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1 gap-1">
+                        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                          <span className="font-medium text-xs sm:text-sm truncate">{comment.user_name}</span>
                           <span className="text-xs text-muted-foreground">
                             {new Date(comment.created_at).toLocaleDateString()}
                           </span>
@@ -715,13 +702,13 @@ useEffect(() => {
                             variant="ghost"
                             size="sm"
                             onClick={() => deleteComment(comment.id)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0 flex-shrink-0"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">{comment.content}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground break-words">{comment.content}</p>
                     </div>
                   </div>
                 ))}
