@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode } from "react";
 import ErrorAlert from "@/components/ErrorAlert";
-import { ErrorInfo, useErrorHandler } from "@/hooks/useErrorHandler";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 interface ErrorContextType {
   showError: (error: any, customMessage?: string) => void;

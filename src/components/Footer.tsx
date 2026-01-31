@@ -42,20 +42,17 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-semibold mb-6 text-vallenato-gold">Navegación</h4>
             <nav className="space-y-4">
-              <a href="#inicio" className="block text-white/80 hover:text-white transition-smooth">
+              <a href="/" className="block text-white/80 hover:text-white transition-smooth">
                 Inicio
               </a>
-              <a href="#biografia" className="block text-white/80 hover:text-white transition-smooth">
-                Biografía
-              </a>
-              <a href="#cursos" className="block text-white/80 hover:text-white transition-smooth">
+              <a href="/cursos" className="block text-white/80 hover:text-white transition-smooth">
                 Cursos
               </a>
-              <a href="#videos" className="block text-white/80 hover:text-white transition-smooth">
-                Videos
-              </a>
-              <a href="#contacto" className="block text-white/80 hover:text-white transition-smooth">
+              <a href="/contacto" className="block text-white/80 hover:text-white transition-smooth">
                 Contacto
+              </a>
+              <a href="/preguntas-frecuentes" className="block text-white/80 hover:text-white transition-smooth">
+                Preguntas Frecuentes
               </a>
             </nav>
           </div>
@@ -126,10 +123,10 @@ const Footer = () => {
             </p>
           </div>
           <div className="flex space-x-6 text-sm">
-            <a href="#" className="text-white/80 hover:text-white transition-smooth">
+            <a href="/politica-privacidad" className="text-white/80 hover:text-white transition-smooth">
               Política de Privacidad
             </a>
-            <a href="#" className="text-white/80 hover:text-white transition-smooth">
+            <a href="/terminos-servicio" className="text-white/80 hover:text-white transition-smooth">
               Términos de Servicio
             </a>
           </div>

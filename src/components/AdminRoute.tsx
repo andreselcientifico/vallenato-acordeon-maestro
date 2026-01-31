@@ -71,7 +71,7 @@ export default function AdminRoute({ children }) {
   // ===============================
   // ⛔ LOGUEADO PERO NO ES ADMIN
   // ===============================
-  if (user.role !== "Admin") {
+  if (user.role !== "admin") {
     return <Navigate to="/perfil" replace />;
   }
 

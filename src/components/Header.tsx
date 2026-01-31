@@ -9,12 +9,11 @@ import valenatoLogo from "@/assets/vallenato-logo.webp";
 import { useAuth } from "@/context/AuthContext";
 import { sendEmail } from "@/api/email";
 import { getUserSubscriptions } from "@/api/subscriptions";
-import { getRandomAvatar } from "@/lib/avatars";
 
 const Header = memo(() => {
   const navigate = useNavigate();
   const { user, login, logout, loading } = useAuth();
-  const isAdmin = Boolean(user && (user.role === "Admin" || (user as any).isAdmin));
+  const isAdmin = Boolean(user && (user.role === "admin" || (user as any).isAdmin));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [resendMessage, setResendMessage] = useState<string | null>(null);

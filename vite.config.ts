@@ -2,10 +2,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import fs from 'fs'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: "/",
   server: {
     // https: {
     //   key: fs.readFileSync(path.resolve(__dirname, "../certificados/localhost-key.pem")),
@@ -14,74 +14,113 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     hmr: false,
-    allowedHosts: true
+    allowedHosts: true,
   },
   preview: {
-    // allowedHosts permite que el servidor de preview acepte solicitudes desde ciertos hosts externos.
-    // Esto es necesario cuando usas Cloudflare Tunnel, Ngrok, LocalTunnel, etc.
-    allowedHosts: true
+    allowedHosts: true,
+    host: true,
+    port: 4173,
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [react(), mode === "development" && componentTagger()].filter(
+    Boolean,
+  ),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-   build: {
+  build: {
     // Optimizaciones de build
-    target: 'esnext',
-    minify: 'esbuild',
+    target: "esnext",
+    minify: "terser",
     sourcemap: false,
+    terserOptions: {
+      compress: {
+        drop_console: true, // Elimina console.logs
+        drop_debugger: true,
+        pure_funcs: ["console.log", "console.info", "console.debug"], // Elimina funciones específicas
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Chunking inteligente para mejor caching
-          if (id.includes('node_modules')) {
-            // Separar React y sus dependencias
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'react-vendor';
+          // Dividir node_modules agresivamente
+          if (id.includes("node_modules")) {
+            // React core
+            if (id.includes("react/") || id.includes("react-dom/")) {
+              return "react-core";
             }
-            // Separar UI libraries
-            if (id.includes('@radix-ui') || id.includes('lucide-react') || id.includes('tailwindcss')) {
-              return 'ui-vendor';
+
+            // React Router
+            if (id.includes("react-router")) {
+              return "react-router";
             }
-            // Separar otras librerías
-            if (id.includes('axios') || id.includes('date-fns') || id.includes('@tanstack/react-query')) {
-              return 'utils-vendor';
+
+            // Radix UI - TODOS en un solo chunk para evitar dependencias circulares
+            if (id.includes("@radix-ui")) {
+              return "radix-ui";
             }
-            // Paypal y otras librerías pesadas
-            if (id.includes('paypal') || id.includes('stripe')) {
-              return 'payment-vendor';
+
+            // Lucide icons
+            if (id.includes("lucide-react")) {
+              return "lucide-icons";
             }
-            return 'vendor';
+
+            // TanStack Query
+            if (id.includes("@tanstack/react-query")) {
+              return "react-query";
+            }
+
+            // PayPal (muy pesado, separarlo)
+            if (id.includes("@paypal")) {
+              return "paypal";
+            }
+
+            // Date utilities
+            if (id.includes("date-fns")) {
+              return "date-utils";
+            }
           }
-          // Chunking por páginas/routes
-          if (id.includes('/pages/')) {
-            const pageName = id.split('/pages/')[1].split('.')[0];
+
+          // Páginas - cada una en su propio chunk
+          if (id.includes("/src/pages/")) {
+            const pageName = id.split("/src/pages/")[1].split(".")[0];
             return `page-${pageName}`;
           }
-        }
-      }
+
+          // Componentes grandes en chunks separados
+          if (id.includes("/src/components/") && id.length > 1000) {
+            const componentPath = id.split("/src/components/")[1];
+            const componentName = componentPath.split("/")[0];
+            return `comp-${componentName}`;
+          }
+        },
+        // Optimizar nombres de chunks para mejor caching
+        chunkFileNames: "assets/[name]-[hash].js",
+        entryFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash].[ext]",
+      },
     },
     // Optimizaciones adicionales
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500,
     cssCodeSplit: true,
-    reportCompressedSize: false,
+    reportCompressedSize: true,
+    assetsInlineLimit: 4096,
   },
   // Optimizaciones de desarrollo
   optimizeDeps: {
     include: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-      '@tanstack/react-query',
-      'lucide-react',
-      'date-fns'
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "@tanstack/react-query",
+      "lucide-react",
+      "date-fns",
     ],
-    exclude: ['@vite/client', '@vite/env']
+    exclude: ["@vite/client", "@vite/env"],
   },
   // Preload de módulos críticos
   ssr: {
-    noExternal: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu']
-  }
+    noExternal: ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu"],
+  },
 }));

@@ -35,6 +35,10 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage"));
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const ContactPage = lazy(() => import("./pages/ContactPage"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const FAQPage = lazy(() => import("./pages/FAQPage"));
 import AdminRoute from "./components/AdminRoute";
 const AchievementSystemInitializer = lazy(() => import("./components/AchievementSystemInitializer"));
 
@@ -86,12 +90,7 @@ const App = () => {
           <AchievementNotificationProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true,
-            }}
-          >
+            <BrowserRouter          >
             <Suspense fallback={<LoadingScreen />}>
               <AchievementSystemInitializer />
               <Routes>
@@ -117,6 +116,10 @@ const App = () => {
                 <Route path="/cambiar-contrasena" element={<ChangePasswordPage />} />
                 <Route path="/olvide-contrasena" element={<ForgotPasswordPage />} />
                 <Route path="/resetear-contrasena" element={<ResetPasswordPage />} />
+                <Route path="/contacto" element={<ContactPage />} />
+                <Route path="/politica-privacidad" element={<PrivacyPage />} />
+                <Route path="/terminos-servicio" element={<TermsPage />} />
+                <Route path="/preguntas-frecuentes" element={<FAQPage />} />
 
                 {/* RUTA CON PROTECCIÓN LAZY */}
                 <Route

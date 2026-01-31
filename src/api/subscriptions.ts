@@ -24,6 +24,7 @@ export interface SubscriptionPlan {
   duration_months: number;
   features: string[];
   paypal_plan_id: string;
+  trial_days: number | null;
   active: boolean;
   created_at: string;
 }

@@ -1,17 +1,8 @@
 // src/pages/CoursePreviewPage.tsx
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import ReactPlayer from "react-player";
 import { 
-  Play, 
-  Pause, 
-  SkipBack, 
-  SkipForward, 
-  Volume2, 
-  Maximize, 
-  CheckCircle2, 
-  Circle, 
   Clock, 
   BookOpen, 
   MessageCircle,
@@ -23,6 +14,10 @@ import {
   Lock,
   Menu,
   X,
+  RotateCcw,
+  RotateCw,
+  Pause,
+  Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,7 +28,6 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 // Importar los tipos actualizados
 import { CourseDetails, Lesson, Module, Comment, getLessonComments, CourseRating, getCourseRating, getCourseDetails_preview } from "@/api/courses";
-import { API_URL } from "@/config/api";
 
 interface LessonContentRendererProps {
   lesson: Lesson;
@@ -49,11 +43,31 @@ const LessonContentRenderer: React.FC<LessonContentRendererProps> = ({
   setIsPlaying,
   isLocked
 }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
   const isVideo = lesson.type === 'video' && lesson.content_url;
 
-  const getYouTubeVideoId = (url: string) => {
-    const match = url.match(/(?:https?:\/\/(?:www\.)?youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-    return match ? match[1] : null;
+  // Control nativo del video
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isPlaying) videoRef.current.play().catch(() => {});
+      else videoRef.current.pause();
+    }
+  }, [isPlaying, lesson.content_url]);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
+
+  const skip = (seconds: number) => {
+    if (videoRef.current) videoRef.current.currentTime += seconds;
   };
 
   if (isLocked) {
@@ -73,43 +87,40 @@ const LessonContentRenderer: React.FC<LessonContentRendererProps> = ({
 
   if (isVideo) {
     return (
-      <>
-        {/* Reproductor de Video */}
-        <div className="aspect-video bg-black relative w-full">
-          <ReactPlayer
-            src={lesson.content_url}
-            playing={isPlaying}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            onEnded={() => setIsPlaying(false)}
-            controls={true}
-            light={false}
-            playsInline={true}
-            pip={true}
-            width="100%"
-            height="100%"
-            config={{
-              youtube: {
-                rel: 0,
-                fs: 1,
-              }
-            }}
-          />
+      <div className="group relative aspect-video bg-black w-full overflow-hidden">
+        <video
+          ref={videoRef}
+          src={lesson.content_url}
+          className="w-full h-full"
+          playsInline
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+        />
+        
+        {/* Controles simples para Preview */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center space-x-4 bg-black/40 p-3 rounded-full backdrop-blur-sm">
+            <Button variant="ghost" size="icon" className="text-white h-10 w-10" onClick={() => skip(-10)}>
+              <RotateCcw className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-white h-12 w-12" onClick={togglePlay}>
+              {isPlaying ? <Pause className="h-7 w-7 fill-current" /> : <Play className="h-7 w-7 fill-current" />}
+            </Button>
+            <Button variant="ghost" size="icon" className="text-white h-10 w-10" onClick={() => skip(10)}>
+              <RotateCw className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-      </>
+      </div>
     );
   }
 
-  // Renderizado de Contenido No-Video
   const icon = lesson.type === 'quiz' ? <Star className="h-10 w-10 text-primary" /> : <ClipboardCheck className="h-10 w-10 text-primary" />;
-  const title = lesson.type === 'quiz' ? 'Cuestionario' : 'Ejercicio';
-  const description = lesson.description || `Esta lección es un ${title.toLowerCase()} que debes completar.`;
-
   return (
     <div className="p-10 bg-white dark:bg-gray-800 h-[400px] flex flex-col items-center justify-center text-center space-y-4">
       {icon}
-      <h3 className="text-3xl font-bold">{title}: {lesson.title}</h3>
-      <p className="text-lg text-muted-foreground max-w-2xl">{description}</p>
+      <h3 className="text-3xl font-bold">{lesson.title}</h3>
+      <p className="text-lg text-muted-foreground max-w-2xl">{lesson.description || "Ejercicio de práctica."}</p>
     </div>
   );
 };

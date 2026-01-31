@@ -1,7 +1,6 @@
 import LazyHeader from "@/components/LazyHeader";
 import Hero from "@/components/Hero";
 import Biography from "@/components/Biography";
-import VideoCarousel from "@/components/VideoCarousel";
 import Courses from "@/components/Courses";
 import Footer from "@/components/Footer";
 

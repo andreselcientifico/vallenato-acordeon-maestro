@@ -7,7 +7,6 @@ import {
   Clock,
   Users,
   Star,
-  BookOpen,
   Search,
   Unlock,
 } from "lucide-react";

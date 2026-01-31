@@ -1,15 +1,12 @@
 // src/pages/CoursePlayerPage.tsx
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import ReactPlayer from "react-player";
 import { 
   Play, 
   Pause, 
-  SkipBack, 
-  SkipForward, 
-  Volume2, 
-  Maximize, 
+  RotateCcw,
+  RotateCw,
   CheckCircle2, 
   Circle, 
   Clock, 
@@ -32,8 +29,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { Quizz } from "@/components/Quiz";
 // Importar los tipos actualizados
 import { CourseDetails, getCourseDetails, Lesson, Module, Comment, getLessonComments, createLessonComment, deleteLessonComment, CourseRating, getCourseRating, rateCourse } from "@/api/courses";
+import { getQuizByLesson, QuizResultDto } from "@/api/quiz";
 import { API_URL } from "@/config/api";
 import { checkLessonCompletion, checkCourseCompletion } from "@/lib/achievementSystem";
 import { useAuth } from "@/context/AuthContext";
@@ -53,55 +52,153 @@ const LessonContentRenderer: React.FC<LessonContentRendererProps> = ({
   setIsPlaying,
   markComplete
 }) => {
+  const [quiz, setQuiz] = useState<any>(null);
+  const [loadingQuiz, setLoadingQuiz] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const { toast } = useToast();
+
   const isVideo = lesson.type === 'video' && lesson.content_url;
 
-  const getYouTubeVideoId = (url: string) => {
-    const match = url.match(/(?:https?:\/\/(?:www\.)?youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-    return match ? match[1] : null;
+  // Sincronizar estado externo con el video nativo
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isPlaying) videoRef.current.play().catch(() => {});
+      else videoRef.current.pause();
+    }
+  }, [isPlaying, lesson.content_url]);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
   };
 
-  // Si es un video de YouTube, generamos el URL del poster
-  const getVideoPosterUrl = (url: string) => {
-    const videoId = getYouTubeVideoId(url);
-    if (videoId) {
-      return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`; // Poster de YouTube
+  const skip = (seconds: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime += seconds;
     }
-    return '/placeholder-video.jpg'; // Fallback en caso de que no sea un video de YouTube
   };
+
+  useEffect(() => {
+    // Cargar quiz si la lección es de tipo quiz
+    if (lesson.type === 'quiz' && lesson.id) {
+      loadQuiz();
+    }
+  }, [lesson.id, lesson.type]);
+
+  const loadQuiz = async () => {
+    try {
+      setLoadingQuiz(true);
+      const quizData = await getQuizByLesson(lesson.id);
+      setQuiz(quizData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo cargar el quiz",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingQuiz(false);
+    }
+  };
+
+  const handleQuizComplete = (result: QuizResultDto) => {
+    if (result.passed) markComplete();
+  };
+
 
   if (isVideo) {
     return (
-      <>
-        {/* Reproductor de Video */}
-        <div className="aspect-video bg-black relative w-full">
-          <ReactPlayer
-            src={lesson.content_url}
-            playing={isPlaying}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            onEnded={() => setIsPlaying(false)}
-            controls={true}
-            light={false}
-            playsInline={true}
-            pip={true}
-            width="100%"
-            height="100%"
-            config={{
-              youtube: {
-                rel: 0,
-                fs: 1,
-              }
-            }}
-          />
+      <div className="group relative aspect-video bg-black w-full overflow-hidden">
+        {/* Etiqueta de Video Nativa (Peso 0 KB) */}
+        <video
+          ref={videoRef}
+          src={lesson.content_url}
+          className="w-full h-full"
+          playsInline
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => {
+            setIsPlaying(false);
+            markComplete(); // Marcar al terminar el video
+          }}
+        />
+
+        {/* Overlay de Controles Personalizados (Aparece al hacer hover) */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center space-x-4 bg-black/40 p-4 rounded-full backdrop-blur-sm">
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={() => skip(-10)}>
+              <RotateCcw className="h-6 w-6" />
+            </Button>
+            
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 h-12 w-12" onClick={togglePlay}>
+              {isPlaying ? <Pause className="h-8 w-8 fill-current" /> : <Play className="h-8 w-8 fill-current" />}
+            </Button>
+
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={() => skip(10)}>
+              <RotateCw className="h-6 w-6" />
+            </Button>
+          </div>
         </div>
-      </>
+        
+        {/* Barra de progreso nativa (opcional, el navegador ya muestra una si pones controls) */}
+        {/* Aquí podrías usar videoRef.current.currentTime para una barra propia */}
+      </div>
     );
   }
 
-  // --- Renderizado de Contenido No-Video (Quiz/Exercise) ---
-  const icon = lesson.type === 'quiz' ? <Star className="h-10 w-10 text-primary" /> : <ClipboardCheck className="h-10 w-10 text-primary" />;
-  const title = lesson.type === 'quiz' ? 'Cuestionario' : 'Ejercicio';
-  const description = lesson.description || `Esta lección es un ${title.toLowerCase()} que debes completar.`;
+  // --- Renderizado de Contenido de Quiz ---
+  if (lesson.type === 'quiz') {
+    if (loadingQuiz) {
+      return (
+        <div className="p-10 bg-white dark:bg-gray-800 h-[600px] flex flex-col items-center justify-center text-center space-y-4">
+          <div className="animate-spin">
+            <Star className="h-10 w-10 text-primary" />
+          </div>
+          <p>Cargando quiz...</p>
+        </div>
+      );
+    }
+
+    if (lesson.type === 'quiz') {
+    if (loadingQuiz) return (
+      <div className="p-10 bg-white dark:bg-gray-800 h-[600px] flex flex-col items-center justify-center space-y-4">
+        <div className="animate-spin"><Star className="h-10 w-10 text-primary" /></div>
+        <p>Cargando quiz...</p>
+      </div>
+    );
+    if (!quiz) return (
+      <div className="p-10 bg-white dark:bg-gray-800 h-[600px] flex flex-col items-center justify-center space-y-4">
+        <Star className="h-10 w-10 text-red-500" />
+        <h3 className="text-3xl font-bold">Quiz no disponible</h3>
+      </div>
+    );
+    return <div className="p-6 bg-white dark:bg-gray-800 w-full"><Quizz quiz={quiz} onQuizComplete={handleQuizComplete} /></div>;
+  }
+
+  return (
+    <div className="p-10 bg-white dark:bg-gray-800 h-[600px] flex flex-col items-center justify-center text-center space-y-4">
+      <ClipboardCheck className="h-10 w-10 text-primary" />
+      <h3 className="text-3xl font-bold">Ejercicio: {lesson.title}</h3>
+      <p className="text-lg text-muted-foreground max-w-2xl">{lesson.description || "Completa este ejercicio."}</p>
+      <Button size="lg" onClick={() => lesson.content_url && window.open(lesson.content_url, '_blank')}>Ver Ejercicio</Button>
+      {!lesson.completed && (
+        <Button variant="secondary" size="sm" onClick={markComplete} className="mt-4">Marcar como Completado manualmente</Button>
+      )}
+    </div>
+  );
+};
+
+  // --- Renderizado de Contenido No-Video (Exercise) ---
+  const icon = <ClipboardCheck className="h-10 w-10 text-primary" />;
+  const title = 'Ejercicio';
+  const description = lesson.description || `Esta lección es un ejercicio que debes completar.`;
 
   useEffect(() => {
     if (lesson && lesson.type === "video") {
@@ -118,7 +215,7 @@ const LessonContentRenderer: React.FC<LessonContentRendererProps> = ({
       
       {/* Botón de acción para el contenido */}
       <Button size="lg" onClick={() => lesson.content_url && window.open(lesson.content_url, '_blank')}>
-        {lesson.type === 'quiz' ? 'Iniciar Cuestionario' : 'Ver Ejercicio'}
+        Ver Ejercicio
       </Button>
 
       {/* Botón de Completado (Fuera del flujo normal) */}

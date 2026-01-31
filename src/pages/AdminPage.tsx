@@ -15,14 +15,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import AdminQuizEditor from "@/components/AdminQuizEditor";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Trash2, Plus, ArrowLeft, Save, Eye, GripVertical, ChevronDown, ChevronUp, Check, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Trash2,
+  Plus,
+  ArrowLeft,
+  Save,
+  Eye,
+  GripVertical,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  X,
+  Edit2,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { saveCourseAPI, fetchCoursesAPI, deleteCourseAPI } from "@/api/admin";
-import CoursesPage from "./CoursesPage";
-import { normalize } from "path";
-import * as yup from 'yup';
+import { z } from "zod";
 import {
   getSubscriptionPlans,
   createSubscriptionPlan,
@@ -31,9 +51,8 @@ import {
   getAchievements,
   createAchievement,
   updateAchievement,
-  deleteAchievement,
   SubscriptionPlan,
-  UserAchievement
+  UserAchievement,
 } from "@/api/subscriptions";
 
 // ----------------------------------------------------------------------
@@ -75,35 +94,46 @@ interface Course {
   created_at: string;
 }
 
-// Esquema de validación con Yup
-const courseValidationSchema = yup.object().shape({
-  title: yup.string().required('El título del curso es requerido'),
-  description: yup.string().required('La descripción corta es requerida'),
-  longDescription: yup.string(),
-  level: yup.string().required('El nivel es requerido').oneOf(['básico', 'intermedio', 'avanzado'], 'Nivel inválido'),
-  price: yup.number().min(0, 'El precio debe ser mayor a 0').required('El precio es requerido'),
-  duration: yup.string(),
-  students: yup.number(),
-  rating: yup.number(),
-  image: yup.string().url('La URL de la imagen no es válida'),
-  category: yup.string().required('La categoría es requerida').oneOf(['básico', 'premium'], 'Categoría inválida'),
-  features: yup.array().of(yup.string()),
-  modules: yup.array().of(
-    yup.object().shape({
-      title: yup.string().required('El título del módulo es requerido'),
-      order: yup.number().min(1, 'El orden debe ser al menos 1'),
-      lessons: yup.array().of(
-        yup.object().shape({
-          title: yup.string().required('El título de la lección es requerido'),
-          duration: yup.string(),
-          type: yup.string().oneOf(['video', 'exercise', 'quiz'], 'Tipo de lección inválido'),
-          content_url: yup.string().url('La URL del contenido no es válida'),
-          description: yup.string(),
-          order: yup.number().min(1, 'El orden debe ser al menos 1'),
-        })
-      ),
-    })
-  ),
+// Esquema de validación con Zod
+const lessonSchema = z.object({
+  id: z.string().nullable(),
+  title: z.string().min(1, "El título de la lección es requerido"),
+  duration: z.string(),
+  completed: z.boolean().optional(),
+  type: z.enum(["video", "exercise", "quiz"], {
+    message: "Tipo de lección inválido"
+  }),
+  content_url: z.string().url("La URL del contenido no es válida").or(z.literal("")),
+  description: z.string(),
+  order: z.number().min(1, "El orden debe ser al menos 1"),
+});
+
+const moduleSchema = z.object({
+  id: z.string().nullable(),
+  title: z.string().min(1, "El título del módulo es requerido"),
+  order: z.number().min(1, "El orden debe ser al menos 1"),
+  lessons: z.array(lessonSchema),
+});
+
+const courseValidationSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1, "El título del curso es requerido"),
+  description: z.string().min(1, "La descripción corta es requerida"),
+  longDescription: z.string(),
+  level: z.enum(["básico", "intermedio", "avanzado"], {
+    message: "Nivel inválido"
+  }),
+  price: z.number().min(0, "El precio debe ser mayor a 0"),
+  duration: z.string(),
+  students: z.number(),
+  rating: z.number(),
+  image: z.string().url("La URL de la imagen no es válida").or(z.literal("")),
+  category: z.enum(["básico", "premium"], {
+    message: "Categoría inválida"
+  }),
+  modules: z.array(moduleSchema),
+  features: z.array(z.string()),
+  created_at: z.string(),
 });
 
 const AdminPage = () => {
@@ -112,12 +142,15 @@ const AdminPage = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [activeTab, setActiveTab] = useState("manage");
   const [search, setSearch] = useState("");
-  const isValidUrl = (url) =>
-  /^https?:\/\/.+/i.test(url);
+  const isValidUrl = (url: string) => /^https?:\/\/.+/i.test(url);
 
   // Filtros
-  const [filterCategory, setFilterCategory] = useState<"all" | "básico" | "premium">("all");
-  const [filterLevel, setFilterLevel] = useState<"all" | "básico" | "intermedio" | "avanzado">("all");
+  const [filterCategory, setFilterCategory] = useState<
+    "all" | "básico" | "premium"
+  >("all");
+  const [filterLevel, setFilterLevel] = useState<
+    "all" | "básico" | "intermedio" | "avanzado"
+  >("all");
   const [filterDateFrom, setFilterDateFrom] = useState<Date | null>(null);
   const [filterDateTo, setFilterDateTo] = useState<Date | null>(null);
 
@@ -143,27 +176,42 @@ const AdminPage = () => {
   const [editingCourse, setEditingCourse] = useState<string | null>(null);
 
   // Control de acordeón visual para módulos
-  const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set([0]));
+  const [expandedModules, setExpandedModules] = useState<Set<number>>(
+    new Set([0]),
+  );
+
+  // Quiz editor modal control
+  const [quizEditorOpen, setQuizEditorOpen] = useState(false);
+  const [quizEditorLessonId, setQuizEditorLessonId] = useState<string>("");
 
   // Estado para suscripciones
-  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
-  const [currentSubscriptionPlan, setCurrentSubscriptionPlan] = useState<Partial<SubscriptionPlan>>({
+  const [subscriptionPlans, setSubscriptionPlans] = useState<
+    SubscriptionPlan[]
+  >([]);
+  const [currentSubscriptionPlan, setCurrentSubscriptionPlan] = useState<
+    Partial<SubscriptionPlan>
+  >({
     name: "",
     description: "",
     price: 0,
     duration_months: 1,
     features: [],
     paypal_plan_id: "",
+    trial_days: 7,
     active: true,
   });
-  const [editingSubscriptionPlan, setEditingSubscriptionPlan] = useState<string | null>(null);
+  const [editingSubscriptionPlan, setEditingSubscriptionPlan] = useState<
+    string | null
+  >(null);
   const [newPlanFeature, setNewPlanFeature] = useState("");
   const [isNegative, setIsNegative] = useState(false);
 
   // Estado para logros
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
   const [loadingAchievements, setLoadingAchievements] = useState(false);
-  const [currentAchievement, setCurrentAchievement] = useState<Partial<UserAchievement>>({
+  const [currentAchievement, setCurrentAchievement] = useState<
+    Partial<UserAchievement>
+  >({
     name: "",
     description: "",
     icon: "",
@@ -171,19 +219,21 @@ const AdminPage = () => {
     trigger_value: 1,
     active: true,
   });
-  const [editingAchievement, setEditingAchievement] = useState<string | null>(null);
+  const [editingAchievement, setEditingAchievement] = useState<string | null>(
+    null,
+  );
 
   // Estado para diálogo de eliminación
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
-    type: 'plan' | 'achievement' | null;
+    type: "plan" | "achievement" | null;
     id: string;
     name: string;
   }>({
     open: false,
     type: null,
-    id: '',
-    name: '',
+    id: "",
+    name: "",
   });
 
   const toggleModule = (index: number) => {
@@ -202,7 +252,7 @@ const AdminPage = () => {
     }
   }, [search]);
 
-    const loadAchievements = useCallback(async () => {
+  const loadAchievements = useCallback(async () => {
     try {
       setLoadingAchievements(true);
       const achievementsData = await getAchievements();
@@ -231,7 +281,6 @@ const AdminPage = () => {
     }
   }, [toast]);
 
-
   // ----------------------------------------------------------------------
   // LOAD SUBSCRIPTION PLANS AND ACHIEVEMENTS
   // ----------------------------------------------------------------------
@@ -239,6 +288,11 @@ const AdminPage = () => {
     loadSubscriptionPlans();
     loadAchievements();
   }, [loadSubscriptionPlans, loadAchievements]);
+
+  // Refresh courses after closing quiz editor
+  useEffect(() => {
+    if (!quizEditorOpen) loadCoursesFromDB();
+  }, [quizEditorOpen]);
 
   function addPlanFeature() {
     if (!newPlanFeature.trim()) return;
@@ -259,7 +313,7 @@ const AdminPage = () => {
   const removePlanFeature = (index: number) => {
     setCurrentSubscriptionPlan({
       ...currentSubscriptionPlan,
-      features: currentSubscriptionPlan.features.filter((_, i) => i !== index),
+      features: currentSubscriptionPlan.features?.filter((_, i) => i !== index),
     });
   };
 
@@ -270,7 +324,7 @@ const AdminPage = () => {
     .filter(
       (c) =>
         c.title.toLowerCase().includes(search.toLowerCase()) ||
-        c.description.toLowerCase().includes(search.toLowerCase())
+        c.description.toLowerCase().includes(search.toLowerCase()),
     )
     .filter((c) => filterCategory === "all" || c.category === filterCategory)
     .filter((c) => filterLevel === "all" || c.level === filterLevel)
@@ -282,8 +336,9 @@ const AdminPage = () => {
       return courseDate >= from && courseDate <= to;
     });
 
-  const Normalized = async (data) => {
-    const normalized: Course[] = data.map((item: any) => ({
+  const Normalized = async (data: any) => {
+    const normalized: Course[] = data
+      .map((item: any) => ({
         id: item.id,
         title: item.title,
         description: item.description,
@@ -311,59 +366,56 @@ const AdminPage = () => {
             type: l.type || l.r_type || "video", // Rust 'type' field handling
             content_url: l.content_url || "",
             description: l.description || "",
-            order: l.order
-          }))
-        }))
-      })).sort((a, b) => {
+            order: l.order,
+          })),
+        })),
+      }))
+      .sort((a, b) => {
         const dateA = new Date(a.created_at).getTime();
         const dateB = new Date(b.created_at).getTime();
         return dateB - dateA;
       });
 
-      return normalized;
-  }
+    return normalized;
+  };
 
-  const Payload = async (data) => {
+  const Payload = async (data: Course) => {
     return {
-        //id: currentCourse.id || undefined, // undefined para creación
-        title: data.title,
-        description: data.description,
-        long_description: data.longDescription, // snake_case OK
-        level: data.level,
-        price: data.price,
-        duration: data.duration,
-        students: data.students|| undefined,
-        rating: data.rating|| undefined,
-        image: data.image,
-        category: data.category,
-        features: data.features,
+      title: data.title,
+      description: data.description,
+      long_description: data.longDescription,
+      level: data.level,
+      price: data.price,
+      duration: data.duration,
+      students: data.students || undefined,
+      rating: data.rating || undefined,
+      image: data.image,
+      category: data.category,
+      features: data.features,
 
-        // Mapeo de Módulos -> UpdateModuleDTO / CreateModuleDTO
-        modules: data.modules.map(m => ({
-          id: m.id ? m.id : undefined, // undefined si es nuevo
-          title: m.title,
-          order: m.order,
-          lessons: m.lessons.map(l => ({
-            id: l.id ? l.id : undefined, // undefined si es nueva
-            title: l.title,
-            duration: l.duration,
-            completed: l.completed ?? false,
-            type: l.type,        // video | exercise | quiz
-            content_url: l.content_url,
-            description: l.description,
-            order: l.order
-          }))
-        }))
-      };
-  }
+      modules: data.modules.map((m) => ({
+        id: m.id ? m.id : undefined,
+        title: m.title,
+        order: m.order,
+        lessons: m.lessons.map((l) => ({
+          id: l.id ? l.id : undefined,
+          title: l.title,
+          duration: l.duration,
+          completed: l.completed ?? false,
+          type: l.type,
+          content_url: l.content_url,
+          description: l.description,
+          order: l.order,
+        })),
+      })),
+    };
+  };
 
   // ----------------------------------------------------------------------
   // LOAD COURSES FROM DB FUNCTION
   // ----------------------------------------------------------------------
   const loadCoursesFromDB = async () => {
     try {
-      // Se asume que fetchCoursesAPI llama a /api/courses/with-videos (get_courses_with_videos)
-      // y devuelve Vec<CourseWithModulesDto>
       setCourses(await Normalized(await fetchCoursesAPI()));
     } catch (error) {
       toast({
@@ -377,30 +429,25 @@ const AdminPage = () => {
   // ----------------------------------------------------------------------
   // SUBSCRIPTION MANAGEMENT
   // ----------------------------------------------------------------------
-  /**
-   * Devuelve true si la feature es negativa
-   */
   function isNegativeFeature(feature: string): boolean {
     return feature.startsWith("!");
   }
 
-  /**
-   * Limpia el texto mostrado al usuario.
-   */
   function normalizeFeature(feature: string): string {
     return feature.replace(/^!/, "");
   }
 
-  /**
-   * Devuelve el texto limpio para mostrar
-   */
   function displayFeature(feature: string): string {
     return feature.replace(/^!/, "");
   }
 
   const saveSubscriptionPlan = async () => {
     try {
-      if (!currentSubscriptionPlan.name || !currentSubscriptionPlan.paypal_plan_id) {
+      if (
+        !currentSubscriptionPlan.name ||
+        currentSubscriptionPlan.price === undefined ||
+        currentSubscriptionPlan.duration_months === undefined
+      ) {
         toast({
           title: "Error",
           description: "Por favor completa los campos obligatorios",
@@ -410,11 +457,25 @@ const AdminPage = () => {
       }
 
       if (editingSubscriptionPlan) {
-        await updateSubscriptionPlan(editingSubscriptionPlan, currentSubscriptionPlan as SubscriptionPlan);
-        toast({ title: "Éxito", description: "Plan de suscripción actualizado correctamente" });
+        await updateSubscriptionPlan(
+          editingSubscriptionPlan,
+          currentSubscriptionPlan as SubscriptionPlan,
+        );
+        toast({
+          title: "Éxito",
+          description: "Plan de suscripción actualizado correctamente",
+        });
       } else {
-        await createSubscriptionPlan(currentSubscriptionPlan as Omit<SubscriptionPlan, 'id' | 'created_at'>);
-        toast({ title: "Éxito", description: "Plan de suscripción creado correctamente" });
+        await createSubscriptionPlan(
+          currentSubscriptionPlan as Omit<
+            SubscriptionPlan,
+            "id" | "created_at"
+          >,
+        );
+        toast({
+          title: "Éxito",
+          description: "Plan de suscripción creado correctamente",
+        });
       }
 
       await loadSubscriptionPlans();
@@ -431,14 +492,13 @@ const AdminPage = () => {
 
   const deleteSubscription = async (planId: string) => {
     deleteSubscriptionPlan(planId);
-    const plan = subscriptionPlans.find(p => p.id === planId);
+    const plan = subscriptionPlans.find((p) => p.id === planId);
     setDeleteDialog({
       open: true,
-      type: 'plan',
+      type: "plan",
       id: planId,
-      name: plan?.name || 'este plan',
+      name: plan?.name || "este plan",
     });
-    // reload page
     await loadSubscriptionPlans();
   };
 
@@ -450,6 +510,7 @@ const AdminPage = () => {
       duration_months: 1,
       features: [],
       paypal_plan_id: "",
+      trial_days: 7,
       active: true,
     });
     setEditingSubscriptionPlan(null);
@@ -472,10 +533,18 @@ const AdminPage = () => {
       }
 
       if (editingAchievement) {
-        await updateAchievement(editingAchievement, currentAchievement as UserAchievement);
-        toast({ title: "Éxito", description: "Logro actualizado correctamente" });
+        await updateAchievement(
+          editingAchievement,
+          currentAchievement as UserAchievement,
+        );
+        toast({
+          title: "Éxito",
+          description: "Logro actualizado correctamente",
+        });
       } else {
-        await createAchievement(currentAchievement as Omit<UserAchievement, 'id' | 'created_at'>);
+        await createAchievement(
+          currentAchievement as Omit<UserAchievement, "id" | "created_at">,
+        );
         toast({ title: "Éxito", description: "Logro creado correctamente" });
       }
 
@@ -492,12 +561,12 @@ const AdminPage = () => {
   };
 
   const deleteAchievement = async (achievementId: string) => {
-    const achievement = achievements.find(a => a.id === achievementId);
+    const achievement = achievements.find((a) => a.id === achievementId);
     setDeleteDialog({
       open: true,
-      type: 'achievement',
+      type: "achievement",
       id: achievementId,
-      name: achievement?.name || 'este logro',
+      name: achievement?.name || "este logro",
     });
   };
 
@@ -517,11 +586,14 @@ const AdminPage = () => {
   const handleDeleteConfirm = async () => {
     const { type, id } = deleteDialog;
     try {
-      if (type === 'plan') {
+      if (type === "plan") {
         await deleteSubscription(id);
         await loadSubscriptionPlans();
-        toast({ title: "Éxito", description: "Plan de suscripción eliminado correctamente" });
-      } else if (type === 'achievement') {
+        toast({
+          title: "Éxito",
+          description: "Plan de suscripción eliminado correctamente",
+        });
+      } else if (type === "achievement") {
         await deleteAchievement(id);
         await loadAchievements();
         toast({ title: "Éxito", description: "Logro eliminado correctamente" });
@@ -529,11 +601,11 @@ const AdminPage = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: `No se pudo eliminar ${type === 'plan' ? 'el plan de suscripción' : 'el logro'}`,
+        description: `No se pudo eliminar ${type === "plan" ? "el plan de suscripción" : "el logro"}`,
         variant: "destructive",
       });
     } finally {
-      setDeleteDialog({ open: false, type: null, id: '', name: '' });
+      setDeleteDialog({ open: false, type: null, id: "", name: "" });
     }
   };
 
@@ -545,15 +617,14 @@ const AdminPage = () => {
       id: null,
       title: "Nuevo Módulo",
       order: currentCourse.modules.length + 1,
-      lessons: []
+      lessons: [],
     };
 
     setCurrentCourse({
       ...currentCourse,
-      modules: [...currentCourse.modules, newModule]
+      modules: [...currentCourse.modules, newModule],
     });
 
-    // Expandir automáticamente el nuevo módulo
     const newIndex = currentCourse.modules.length;
     setExpandedModules(new Set(expandedModules).add(newIndex));
   };
@@ -566,8 +637,9 @@ const AdminPage = () => {
 
   const removeModule = (index: number) => {
     const updatedModules = currentCourse.modules.filter((_, i) => i !== index);
-    // Reordenar
-    updatedModules.forEach((m, i) => { m.order = i + 1; });
+    updatedModules.forEach((m, i) => {
+      m.order = i + 1;
+    });
     setCurrentCourse({ ...currentCourse, modules: updatedModules });
   };
 
@@ -583,22 +655,30 @@ const AdminPage = () => {
       type: "video",
       content_url: "",
       description: "",
-      order: module.lessons.length + 1
+      order: module.lessons.length + 1,
     };
 
     const updatedModules = [...currentCourse.modules];
     updatedModules[moduleIndex] = {
       ...module,
-      lessons: [...module.lessons, newLesson]
+      lessons: [...module.lessons, newLesson],
     };
 
     setCurrentCourse({ ...currentCourse, modules: updatedModules });
   };
 
-  const updateLesson = (moduleIndex: number, lessonIndex: number, field: keyof Lesson, value: any) => {
+  const updateLesson = (
+    moduleIndex: number,
+    lessonIndex: number,
+    field: keyof Lesson,
+    value: any,
+  ) => {
     const updatedModules = [...currentCourse.modules];
     const updatedLessons = [...updatedModules[moduleIndex].lessons];
-    updatedLessons[lessonIndex] = { ...updatedLessons[lessonIndex], [field]: value };
+    updatedLessons[lessonIndex] = {
+      ...updatedLessons[lessonIndex],
+      [field]: value,
+    };
     updatedModules[moduleIndex].lessons = updatedLessons;
 
     setCurrentCourse({ ...currentCourse, modules: updatedModules });
@@ -606,9 +686,12 @@ const AdminPage = () => {
 
   const removeLesson = (moduleIndex: number, lessonIndex: number) => {
     const updatedModules = [...currentCourse.modules];
-    const filteredLessons = updatedModules[moduleIndex].lessons.filter((_, i) => i !== lessonIndex);
-    // Reordenar
-    filteredLessons.forEach((l, i) => { l.order = i + 1; });
+    const filteredLessons = updatedModules[moduleIndex].lessons.filter(
+      (_, i) => i !== lessonIndex,
+    );
+    filteredLessons.forEach((l, i) => {
+      l.order = i + 1;
+    });
     updatedModules[moduleIndex].lessons = filteredLessons;
 
     setCurrentCourse({ ...currentCourse, modules: updatedModules });
@@ -637,7 +720,8 @@ const AdminPage = () => {
   // ----------------------------------------------------------------------
   const saveCourse = async () => {
     try {
-      await courseValidationSchema.validate(currentCourse, { abortEarly: false });
+      // Validación con Zod
+      courseValidationSchema.parse(currentCourse);
 
       if (!currentCourse.title || !currentCourse.description) {
         toast({
@@ -648,31 +732,25 @@ const AdminPage = () => {
         return;
       }
 
-      const isUpdating = !!currentCourse.id; // Verifica si tiene un ID
-      const endpointId = currentCourse.id || undefined; // Usa el ID para la URL si existe
+      const isUpdating = !!currentCourse.id;
+      const endpointId = currentCourse.id || undefined;
+      
       try {
-        // Construir Payload compatible con Rust DTOs
-        const payload = await Payload(currentCourse)
-
+        const payload = await Payload(currentCourse);
         await saveCourseAPI(payload, endpointId);
-
         await loadCoursesFromDB();
         resetForm();
         toast({ title: "Éxito", description: "Curso guardado correctamente" });
         setActiveTab("manage");
       } catch (error: any) {
-        // Manejo específico si es un 500/404 que indica que el curso ya no existe.
-        // Si recibes un 500 o 404 y estabas actualizando, resetear el ID es clave.
         if (isUpdating) {
-            // Si el servidor falla al actualizar un curso existente,
-            // el curso podría haberse borrado. Desvinculamos el ID.
-            setEditingCourse(null);
-            setCurrentCourse(prev => ({ ...prev, id: "" }));
-            toast({
-                title: "Error de Sincronización",
-                description: `El curso con Title ${currentCourse.title} no se pudo actualizar. Se ha limpiado el formulario. Por favor, crea uno nuevo o recarga la lista.`,
-                variant: "destructive",
-            });
+          setEditingCourse(null);
+          setCurrentCourse((prev) => ({ ...prev, id: "" }));
+          toast({
+            title: "Error de Sincronización",
+            description: `El curso con Title ${currentCourse.title} no se pudo actualizar. Se ha limpiado el formulario. Por favor, crea uno nuevo o recarga la lista.`,
+            variant: "destructive",
+          });
         } else {
           toast({
             title: "Error",
@@ -682,10 +760,10 @@ const AdminPage = () => {
         }
       }
     } catch (validationError) {
-      if (validationError instanceof yup.ValidationError) {
-        const errorMessage = validationError.errors.join(', ');
+      if (validationError instanceof z.ZodError) {
+        const errorMessage = validationError.issues.map(err => err.message).join(", ");
         toast({
-          title: "Error",
+          title: "Error de validación",
           description: errorMessage,
           variant: "destructive",
         });
@@ -700,8 +778,7 @@ const AdminPage = () => {
     setCurrentCourse({ ...course });
     setEditingCourse(course.id);
     setActiveTab("create");
-    // Expandir el primer módulo por defecto
-    if(course.modules.length > 0) setExpandedModules(new Set([0]));
+    if (course.modules.length > 0) setExpandedModules(new Set([0]));
   };
 
   const deleteCourse = async (courseId: string) => {
@@ -709,7 +786,10 @@ const AdminPage = () => {
     try {
       await deleteCourseAPI(courseId);
       setCourses(courses.filter((course) => course.id !== courseId));
-      toast({ title: "Eliminado", description: "Curso eliminado correctamente" });
+      toast({
+        title: "Eliminado",
+        description: "Curso eliminado correctamente",
+      });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -742,7 +822,7 @@ const AdminPage = () => {
   };
 
   // ----------------------------------------------------------------------
-  // RENDER
+  // RENDER (continúa igual...)
   // ----------------------------------------------------------------------
   return (
     <div className="min-h-screen bg-background">
@@ -794,7 +874,6 @@ const AdminPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-
                 {/* 1. INFORMACIÓN BÁSICA */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -802,7 +881,12 @@ const AdminPage = () => {
                     <Input
                       id="title"
                       value={currentCourse.title}
-                      onChange={(e) => setCurrentCourse({ ...currentCourse, title: e.target.value })}
+                      onChange={(e) =>
+                        setCurrentCourse({
+                          ...currentCourse,
+                          title: e.target.value,
+                        })
+                      }
                       placeholder="Ej: Curso de Acordeón Vallenato"
                     />
                   </div>
@@ -812,16 +896,25 @@ const AdminPage = () => {
                       id="price"
                       type="number"
                       value={currentCourse.price}
-                      onChange={(e) => setCurrentCourse({ ...currentCourse, price: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setCurrentCourse({
+                          ...currentCourse,
+                          price: Number(e.target.value),
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Nivel</Label>
                     <Select
                       value={currentCourse.level}
-                      onValueChange={(val: any) => setCurrentCourse({ ...currentCourse, level: val })}
+                      onValueChange={(val: any) =>
+                        setCurrentCourse({ ...currentCourse, level: val })
+                      }
                     >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="básico">Básico</SelectItem>
                         <SelectItem value="intermedio">Intermedio</SelectItem>
@@ -833,9 +926,13 @@ const AdminPage = () => {
                     <Label>Categoría</Label>
                     <Select
                       value={currentCourse.category}
-                      onValueChange={(val: any) => setCurrentCourse({ ...currentCourse, category: val })}
+                      onValueChange={(val: any) =>
+                        setCurrentCourse({ ...currentCourse, category: val })
+                      }
                     >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="básico">Básico</SelectItem>
                         <SelectItem value="premium">Premium</SelectItem>
@@ -846,7 +943,12 @@ const AdminPage = () => {
                     <Label>Duración</Label>
                     <Input
                       value={currentCourse.duration}
-                      onChange={(e) => setCurrentCourse({ ...currentCourse, duration: e.target.value })}
+                      onChange={(e) =>
+                        setCurrentCourse({
+                          ...currentCourse,
+                          duration: e.target.value,
+                        })
+                      }
                       placeholder="Ej: 4 semanas"
                     />
                   </div>
@@ -858,7 +960,10 @@ const AdminPage = () => {
                       placeholder="https://ejemplo.com/imagen.png"
                       value={currentCourse.image}
                       onChange={(e) =>
-                        setCurrentCourse({ ...currentCourse, image: e.target.value })
+                        setCurrentCourse({
+                          ...currentCourse,
+                          image: e.target.value,
+                        })
                       }
                       pattern="https?://.*"
                       title="La URL debe comenzar con http:// o https://"
@@ -875,7 +980,12 @@ const AdminPage = () => {
                   <Label>Descripción Corta *</Label>
                   <Textarea
                     value={currentCourse.description}
-                    onChange={(e) => setCurrentCourse({ ...currentCourse, description: e.target.value })}
+                    onChange={(e) =>
+                      setCurrentCourse({
+                        ...currentCourse,
+                        description: e.target.value,
+                      })
+                    }
                     rows={2}
                   />
                 </div>
@@ -884,14 +994,21 @@ const AdminPage = () => {
                   <Label>Descripción Detallada</Label>
                   <Textarea
                     value={currentCourse.longDescription}
-                    onChange={(e) => setCurrentCourse({ ...currentCourse, longDescription: e.target.value })}
+                    onChange={(e) =>
+                      setCurrentCourse({
+                        ...currentCourse,
+                        longDescription: e.target.value,
+                      })
+                    }
                     rows={4}
                   />
                 </div>
 
                 {/* 2. CARACTERÍSTICAS */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-vallenato-red uppercase tracking-wider">Características</h3>
+                  <h3 className="text-sm font-semibold text-vallenato-red uppercase tracking-wider">
+                    Características
+                  </h3>
                   <div className="flex gap-2">
                     <Input
                       value={newFeature}
@@ -905,7 +1022,11 @@ const AdminPage = () => {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {currentCourse.features.map((feature, index) => (
-                      <Badge key={index} variant="secondary" className="gap-2 pl-3">
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="gap-2 pl-3"
+                      >
                         {feature}
                         <Trash2
                           className="h-3 w-3 cursor-pointer hover:text-destructive"
@@ -919,8 +1040,13 @@ const AdminPage = () => {
                 {/* 3. MÓDULOS Y LECCIONES */}
                 <div className="space-y-4 pt-4 border-t">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-vallenato-red">Plan de Estudios (Módulos)</h3>
-                    <Button onClick={addModule} className="bg-vallenato-red hover:bg-vallenato-red-deep text-white">
+                    <h3 className="text-lg font-bold text-vallenato-red">
+                      Plan de Estudios (Módulos)
+                    </h3>
+                    <Button
+                      onClick={addModule}
+                      className="bg-vallenato-red hover:bg-vallenato-red-deep text-white"
+                    >
                       <Plus className="h-4 w-4 mr-2" /> Agregar Módulo
                     </Button>
                   </div>
@@ -935,9 +1061,11 @@ const AdminPage = () => {
                     {currentCourse.modules.map((module, mIndex) => {
                       const isExpanded = expandedModules.has(mIndex);
                       return (
-                        <Card key={mIndex} className="border-l-4 border-l-vallenato-red shadow-sm">
+                        <Card
+                          key={mIndex}
+                          className="border-l-4 border-l-vallenato-red shadow-sm"
+                        >
                           <div className="p-4 bg-card rounded-t-lg flex flex-col gap-4">
-
                             {/* Header del Módulo */}
                             <div className="flex items-center gap-3">
                               <div className="cursor-grab text-muted-foreground">
@@ -945,28 +1073,57 @@ const AdminPage = () => {
                               </div>
                               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                  <Label className="text-xs text-muted-foreground">Título del Módulo</Label>
+                                  <Label className="text-xs text-muted-foreground">
+                                    Título del Módulo
+                                  </Label>
                                   <Input
                                     value={module.title}
-                                    onChange={(e) => updateModule(mIndex, "title", e.target.value)}
+                                    onChange={(e) =>
+                                      updateModule(
+                                        mIndex,
+                                        "title",
+                                        e.target.value,
+                                      )
+                                    }
                                     className="font-semibold"
                                   />
                                 </div>
                                 <div className="space-y-1">
-                                  <Label className="text-xs text-muted-foreground">Orden</Label>
+                                  <Label className="text-xs text-muted-foreground">
+                                    Orden
+                                  </Label>
                                   <Input
                                     type="number"
                                     value={module.order}
-                                    onChange={(e) => updateModule(mIndex, "order", Number(e.target.value))}
+                                    onChange={(e) =>
+                                      updateModule(
+                                        mIndex,
+                                        "order",
+                                        Number(e.target.value),
+                                      )
+                                    }
                                     className="w-20"
                                   />
                                 </div>
                               </div>
                               <div className="flex gap-2 items-center self-end md:self-center">
-                                <Button variant="ghost" size="sm" onClick={() => toggleModule(mIndex)}>
-                                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleModule(mIndex)}
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronDown className="h-4 w-4" />
+                                  )}
                                 </Button>
-                                <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => removeModule(mIndex)}>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive hover:bg-destructive/10"
+                                  onClick={() => removeModule(mIndex)}
+                                >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
@@ -976,20 +1133,38 @@ const AdminPage = () => {
                             {isExpanded && (
                               <div className="pl-4 md:pl-8 pt-4 border-t mt-2 space-y-4 bg-muted/10 rounded-b-lg pb-4">
                                 <div className="flex justify-between items-center mb-2">
-                                  <h4 className="text-sm font-medium text-muted-foreground uppercase">Lecciones del Módulo</h4>
-                                  <Button size="sm" variant="outline" onClick={() => addLesson(mIndex)}>
+                                  <h4 className="text-sm font-medium text-muted-foreground uppercase">
+                                    Lecciones del Módulo
+                                  </h4>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => addLesson(mIndex)}
+                                  >
                                     <Plus className="h-3 w-3 mr-1" /> Lección
                                   </Button>
                                 </div>
 
                                 {module.lessons.map((lesson, lIndex) => (
-                                  <div key={lIndex} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-start p-3 bg-background border rounded-md shadow-sm">
+                                  <div
+                                    key={lIndex}
+                                    className="grid grid-cols-1 md:grid-cols-12 gap-2 items-start p-3 bg-background border rounded-md shadow-sm"
+                                  >
                                     {/* Título y Orden */}
                                     <div className="md:col-span-3 space-y-1">
-                                      <Label className="text-[10px] uppercase text-muted-foreground">Título</Label>
+                                      <Label className="text-[10px] uppercase text-muted-foreground">
+                                        Título
+                                      </Label>
                                       <Input
                                         value={lesson.title}
-                                        onChange={(e) => updateLesson(mIndex, lIndex, "title", e.target.value)}
+                                        onChange={(e) =>
+                                          updateLesson(
+                                            mIndex,
+                                            lIndex,
+                                            "title",
+                                            e.target.value,
+                                          )
+                                        }
                                         placeholder="Intro..."
                                         className="h-8 text-sm"
                                       />
@@ -997,26 +1172,52 @@ const AdminPage = () => {
 
                                     {/* Tipo */}
                                     <div className="md:col-span-2 space-y-1">
-                                      <Label className="text-[10px] uppercase text-muted-foreground">Tipo</Label>
+                                      <Label className="text-[10px] uppercase text-muted-foreground">
+                                        Tipo
+                                      </Label>
                                       <Select
                                         value={lesson.type}
-                                        onValueChange={(val) => updateLesson(mIndex, lIndex, "type", val)}
+                                        onValueChange={(val) =>
+                                          updateLesson(
+                                            mIndex,
+                                            lIndex,
+                                            "type",
+                                            val,
+                                          )
+                                        }
                                       >
-                                        <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                                        <SelectTrigger className="h-8 text-sm">
+                                          <SelectValue />
+                                        </SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="video">Video</SelectItem>
-                                          <SelectItem value="exercise">Ejercicio</SelectItem>
-                                          <SelectItem value="quiz">Quiz</SelectItem>
+                                          <SelectItem value="video">
+                                            Video
+                                          </SelectItem>
+                                          <SelectItem value="exercise">
+                                            Ejercicio
+                                          </SelectItem>
+                                          <SelectItem value="quiz">
+                                            Quiz
+                                          </SelectItem>
                                         </SelectContent>
                                       </Select>
                                     </div>
 
                                     {/* URL Contenido */}
                                     <div className="md:col-span-3 space-y-1">
-                                      <Label className="text-[10px] uppercase text-muted-foreground">URL Contenido / Video</Label>
+                                      <Label className="text-[10px] uppercase text-muted-foreground">
+                                        URL Contenido / Video
+                                      </Label>
                                       <Input
                                         value={lesson.content_url}
-                                        onChange={(e) => updateLesson(mIndex, lIndex, "content_url", e.target.value)}
+                                        onChange={(e) =>
+                                          updateLesson(
+                                            mIndex,
+                                            lIndex,
+                                            "content_url",
+                                            e.target.value,
+                                          )
+                                        }
                                         placeholder="https://..."
                                         className="h-8 text-sm"
                                       />
@@ -1024,34 +1225,84 @@ const AdminPage = () => {
 
                                     {/* Duración */}
                                     <div className="md:col-span-2 space-y-1">
-                                      <Label className="text-[10px] uppercase text-muted-foreground">Duración</Label>
+                                      <Label className="text-[10px] uppercase text-muted-foreground">
+                                        Duración
+                                      </Label>
                                       <Input
                                         value={lesson.duration}
-                                        onChange={(e) => updateLesson(mIndex, lIndex, "duration", e.target.value)}
+                                        onChange={(e) =>
+                                          updateLesson(
+                                            mIndex,
+                                            lIndex,
+                                            "duration",
+                                            e.target.value,
+                                          )
+                                        }
                                         placeholder="10:00"
                                         className="h-8 text-sm"
                                       />
                                     </div>
 
                                     {/* Botón Eliminar */}
-                                    <div className="md:col-span-1 flex justify-end pt-5">
-                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeLesson(mIndex, lIndex)}>
+                                    <div className="md:col-span-1 flex justify-end pt-5 space-x-2">
+                                      {lesson.type === "quiz" && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-8 gap-1 text-xs bg-amber-50 border-amber-200 hover:bg-amber-100 dark:bg-amber-950 dark:border-amber-800 dark:hover:bg-amber-900"
+                                          onClick={() => {
+                                            if (!lesson.id) {
+                                              alert(
+                                                "Guarda el curso primero para crear/editar el quiz",
+                                              );
+                                              return;
+                                            }
+                                            setQuizEditorLessonId(
+                                              lesson.id as string,
+                                            );
+                                            setQuizEditorOpen(true);
+                                          }}
+                                        >
+                                          <Edit2 className="h-3 w-3" />
+                                          Quiz
+                                        </Button>
+                                      )}
+
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-destructive"
+                                        onClick={() =>
+                                          removeLesson(mIndex, lIndex)
+                                        }
+                                      >
                                         <Trash2 className="h-4 w-4" />
                                       </Button>
                                     </div>
 
                                     {/* Descripción (Opcional, expandible o debajo) */}
                                     <div className="md:col-span-12 mt-1">
-                                       <Input
+                                      <Input
                                         value={lesson.description}
-                                        onChange={(e) => updateLesson(mIndex, lIndex, "description", e.target.value)}
+                                        onChange={(e) =>
+                                          updateLesson(
+                                            mIndex,
+                                            lIndex,
+                                            "description",
+                                            e.target.value,
+                                          )
+                                        }
                                         placeholder="Descripción breve de la lección..."
                                         className="h-7 text-xs bg-muted/20 border-transparent focus:bg-background focus:border-input"
                                       />
                                     </div>
                                   </div>
                                 ))}
-                                {module.lessons.length === 0 && <p className="text-xs text-center text-muted-foreground italic">No hay lecciones en este módulo.</p>}
+                                {module.lessons.length === 0 && (
+                                  <p className="text-xs text-center text-muted-foreground italic">
+                                    No hay lecciones en este módulo.
+                                  </p>
+                                )}
                               </div>
                             )}
                           </div>
@@ -1062,12 +1313,19 @@ const AdminPage = () => {
                 </div>
 
                 <div className="flex gap-4 pt-4">
-                  <Button onClick={saveCourse} className="bg-vallenato-red hover:bg-vallenato-red-deep w-full md:w-auto">
+                  <Button
+                    onClick={saveCourse}
+                    className="bg-vallenato-red hover:bg-vallenato-red-deep w-full md:w-auto"
+                  >
                     <Save className="h-4 w-4 mr-2" />
-                    {editingCourse ? "Actualizar Todo el Curso" : "Guardar Curso"}
+                    {editingCourse
+                      ? "Actualizar Todo el Curso"
+                      : "Guardar Curso"}
                   </Button>
                   {editingCourse && (
-                    <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+                    <Button variant="outline" onClick={resetForm}>
+                      Cancelar
+                    </Button>
                   )}
                 </div>
               </CardContent>
@@ -1078,7 +1336,9 @@ const AdminPage = () => {
           <TabsContent value="manage" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-vallenato-red">Cursos Disponibles ({filteredCourses.length})</CardTitle>
+                <CardTitle className="text-vallenato-red">
+                  Cursos Disponibles ({filteredCourses.length})
+                </CardTitle>
 
                 {/* Controles de Filtro */}
                 <div className="flex flex-col xl:flex-row gap-4 mt-4">
@@ -1089,16 +1349,26 @@ const AdminPage = () => {
                     className="flex-1"
                   />
                   <div className="flex flex-wrap gap-2">
-                     <Select value={filterCategory} onValueChange={(v:any) => setFilterCategory(v)}>
-                      <SelectTrigger className="w-[140px]"><SelectValue placeholder="Categoría" /></SelectTrigger>
+                    <Select
+                      value={filterCategory}
+                      onValueChange={(v: any) => setFilterCategory(v)}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Categoría" />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todas Cat.</SelectItem>
                         <SelectItem value="básico">Básico</SelectItem>
                         <SelectItem value="premium">Premium</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Select value={filterLevel} onValueChange={(v:any) => setFilterLevel(v)}>
-                      <SelectTrigger className="w-[140px]"><SelectValue placeholder="Nivel" /></SelectTrigger>
+                    <Select
+                      value={filterLevel}
+                      onValueChange={(v: any) => setFilterLevel(v)}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Nivel" />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todos Niv.</SelectItem>
                         <SelectItem value="básico">Básico</SelectItem>
@@ -1109,14 +1379,14 @@ const AdminPage = () => {
                     <div className="flex gap-2">
                       <DatePicker
                         selected={filterDateFrom}
-                        // SOLUCIÓN: Tipar explícitamente el argumento como (date: Date | null)
-                        onChange={(date: Date | null) => setFilterDateFrom(date)}
+                        onChange={(date: Date | null) =>
+                          setFilterDateFrom(date)
+                        }
                         placeholderText="Desde"
                         className="flex h-10 w-28 rounded-md border border-input bg-background px-3 py-2 text-sm"
                       />
                       <DatePicker
                         selected={filterDateTo}
-                        // SOLUCIÓN: Lo mismo aquí
                         onChange={(date: Date | null) => setFilterDateTo(date)}
                         placeholderText="Hasta"
                         className="flex h-10 w-28 rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -1127,47 +1397,87 @@ const AdminPage = () => {
               </CardHeader>
               <CardContent>
                 {filteredCourses.length === 0 ? (
-                    <div className="text-center py-10 text-muted-foreground">No se encontraron cursos con estos filtros.</div>
+                  <div className="text-center py-10 text-muted-foreground">
+                    No se encontraron cursos con estos filtros.
+                  </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredCourses.map((course) => (
-                        <Card key={course.id} className="group hover:shadow-lg transition-all duration-300">
+                      <Card
+                        key={course.id}
+                        className="group hover:shadow-lg transition-all duration-300"
+                      >
                         <div className="aspect-video w-full bg-gray-100 overflow-hidden relative">
-                            {course.image ? (
-                            <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
-                            ) : (
-                            <div className="flex items-center justify-center h-full text-gray-400">Sin Imagen</div>
-                            )}
-                            <Badge className="absolute top-2 right-2" variant={course.category === 'premium' ? 'default' : 'secondary'}>
-                                {course.category}
-                            </Badge>
+                          {course.image ? (
+                            <img
+                              src={course.image}
+                              alt={course.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full text-gray-400">
+                              Sin Imagen
+                            </div>
+                          )}
+                          <Badge
+                            className="absolute top-2 right-2"
+                            variant={
+                              course.category === "premium"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {course.category}
+                          </Badge>
                         </div>
                         <div className="p-4 space-y-3">
-                            <div>
-                                <h3 className="font-bold text-lg line-clamp-1 group-hover:text-vallenato-red transition-colors">{course.title}</h3>
-                                <p className="text-sm text-muted-foreground line-clamp-2 h-10">{course.description}</p>
-                            </div>
+                          <div>
+                            <h3 className="font-bold text-lg line-clamp-1 group-hover:text-vallenato-red transition-colors">
+                              {course.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2 h-10">
+                              {course.description}
+                            </p>
+                          </div>
 
-                            <div className="flex items-center justify-between text-sm pt-2 border-t">
-                                <span className="font-mono font-bold">${course.price}</span>
-                                <span className="text-muted-foreground">{course.modules.length} Módulos</span>
-                            </div>
+                          <div className="flex items-center justify-between text-sm pt-2 border-t">
+                            <span className="font-mono font-bold">
+                              ${course.price}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {course.modules.length} Módulos
+                            </span>
+                          </div>
 
-                            <div className="flex gap-2 pt-2">
-                                <Button variant="outline" size="sm" className="flex-1" onClick={() => editCourse(course)}>
-                                    Editar
-                                </Button>
-                                <Button variant="ghost" size="sm" onClick={() => navigate(`/curso/${course.id}`)}>
-                                  Ver
-                                </Button>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => deleteCourse(course.id)}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => editCourse(course)}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/curso/${course.id}`)}
+                            >
+                              Ver
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => deleteCourse(course.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        </Card>
+                      </Card>
                     ))}
-                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1179,7 +1489,12 @@ const AdminPage = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Planes de Suscripción</span>
-                  <Button onClick={() => { resetSubscriptionForm(); setActiveTab("create-subscription"); }}>
+                  <Button
+                    onClick={() => {
+                      resetSubscriptionForm();
+                      setActiveTab("create-subscription");
+                    }}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Crear Plan
                   </Button>
@@ -1194,21 +1509,25 @@ const AdminPage = () => {
                         <div className="text-2xl font-bold text-primary">
                           ${plan.price}
                           <span className="text-sm font-normal text-muted-foreground">
-                            /{plan.duration_months} {plan.duration_months === 1 ? 'mes' : 'meses'}
+                            /{plan.duration_months}{" "}
+                            {plan.duration_months === 1 ? "mes" : "meses"}
                           </span>
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {plan.description}
+                        </p>
                         <div className="space-y-2 mb-4">
                           {plan.features.map((feature, index) => {
                             const negative = isNegativeFeature(feature);
-
                             return (
                               <div
                                 key={index}
                                 className={`flex items-center text-sm ${
-                                  negative ? "text-muted-foreground line-through" : ""
+                                  negative
+                                    ? "text-muted-foreground line-through"
+                                    : ""
                                 }`}
                               >
                                 {negative ? (
@@ -1216,12 +1535,10 @@ const AdminPage = () => {
                                 ) : (
                                   <Check className="h-4 w-4 text-green-500 mr-2" />
                                 )}
-
                                 {displayFeature(feature)}
                               </div>
                             );
                           })}
-
                         </div>
                         <div className="flex gap-2">
                           <Button
@@ -1259,8 +1576,11 @@ const AdminPage = () => {
               <CardHeader>
                 <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <span className="text-xl sm:text-2xl">Logros</span>
-                  <Button 
-                    onClick={() => { resetAchievementForm(); setActiveTab("create-achievement"); }}
+                  <Button
+                    onClick={() => {
+                      resetAchievementForm();
+                      setActiveTab("create-achievement");
+                    }}
                     className="min-h-[44px] text-base w-full sm:w-auto"
                   >
                     <Plus className="h-4 w-4 mr-2" />
@@ -1272,12 +1592,21 @@ const AdminPage = () => {
                 {loadingAchievements ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin h-8 w-8 border-4 border-t-transparent border-primary rounded-full"></div>
-                    <span className="ml-3 text-muted-foreground">Cargando logros...</span>
+                    <span className="ml-3 text-muted-foreground">
+                      Cargando logros...
+                    </span>
                   </div>
                 ) : achievements.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-4">No hay logros creados aún.</p>
-                    <Button onClick={() => { resetAchievementForm(); setActiveTab("create-achievement"); }}>
+                    <p className="text-muted-foreground mb-4">
+                      No hay logros creados aún.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        resetAchievementForm();
+                        setActiveTab("create-achievement");
+                      }}
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Crear primer logro
                     </Button>
@@ -1288,22 +1617,40 @@ const AdminPage = () => {
                       <Card key={achievement.id} className="relative">
                         <CardHeader>
                           <CardTitle className="text-lg flex items-center">
-                            {achievement.icon && <span className="mr-2 text-xl">{achievement.icon}</span>}
-                            <span className="text-sm sm:text-lg">{achievement.name}</span>
+                            {achievement.icon && (
+                              <span className="mr-2 text-xl">
+                                {achievement.icon}
+                              </span>
+                            )}
+                            <span className="text-sm sm:text-lg">
+                              {achievement.name}
+                            </span>
                           </CardTitle>
-                          <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {achievement.description}
+                          </p>
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2 text-sm">
                             <div>
-                              <span className="font-medium">Tipo de activación:</span> {achievement.trigger_type}
+                              <span className="font-medium">
+                                Tipo de activación:
+                              </span>{" "}
+                              {achievement.trigger_type}
                             </div>
                             <div>
-                              <span className="font-medium">Valor requerido:</span> {achievement.trigger_value}
+                              <span className="font-medium">
+                                Valor requerido:
+                              </span>{" "}
+                              {achievement.trigger_value}
                             </div>
                             <div>
                               <span className="font-medium">Estado:</span>{" "}
-                              <Badge variant={achievement.active ? "default" : "secondary"}>
+                              <Badge
+                                variant={
+                                  achievement.active ? "default" : "secondary"
+                                }
+                              >
                                 {achievement.active ? "Activo" : "Inactivo"}
                               </Badge>
                             </div>
@@ -1344,7 +1691,9 @@ const AdminPage = () => {
             <Card>
               <CardHeader>
                 <CardTitle>
-                  {editingSubscriptionPlan ? "Editar Plan de Suscripción" : "Crear Plan de Suscripción"}
+                  {editingSubscriptionPlan
+                    ? "Editar Plan de Suscripción"
+                    : "Crear Plan de Suscripción"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -1353,7 +1702,12 @@ const AdminPage = () => {
                     <Label>Nombre *</Label>
                     <Input
                       value={currentSubscriptionPlan.name}
-                      onChange={(e) => setCurrentSubscriptionPlan({ ...currentSubscriptionPlan, name: e.target.value })}
+                      onChange={(e) =>
+                        setCurrentSubscriptionPlan({
+                          ...currentSubscriptionPlan,
+                          name: e.target.value,
+                        })
+                      }
                       placeholder="Plan Premium"
                     />
                   </div>
@@ -1362,7 +1716,12 @@ const AdminPage = () => {
                     <Input
                       type="number"
                       value={currentSubscriptionPlan.price}
-                      onChange={(e) => setCurrentSubscriptionPlan({ ...currentSubscriptionPlan, price: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) =>
+                        setCurrentSubscriptionPlan({
+                          ...currentSubscriptionPlan,
+                          price: parseFloat(e.target.value) || 0,
+                        })
+                      }
                       placeholder="29.99"
                     />
                   </div>
@@ -1371,11 +1730,16 @@ const AdminPage = () => {
                     <Input
                       type="number"
                       value={currentSubscriptionPlan.duration_months}
-                      onChange={(e) => setCurrentSubscriptionPlan({ ...currentSubscriptionPlan, duration_months: parseInt(e.target.value) || 1 })}
+                      onChange={(e) =>
+                        setCurrentSubscriptionPlan({
+                          ...currentSubscriptionPlan,
+                          duration_months: parseInt(e.target.value) || 1,
+                        })
+                      }
                       placeholder="1"
                     />
                   </div>
-                 <div className="space-y-2">
+                  <div className="space-y-2">
                     <Label>ID del Plan PayPal (opcional)</Label>
                     <Input
                       value={currentSubscriptionPlan.paypal_plan_id ?? ""}
@@ -1388,16 +1752,35 @@ const AdminPage = () => {
                       placeholder="P-XXXXXXXXXXXXXXXXX"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Solo requerido si el plan se cobra automáticamente con PayPal
+                      Solo requerido si el plan se cobra automáticamente con
+                      PayPal
                     </p>
                   </div>
                 </div>
-
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="trial"
+                    checked={currentSubscriptionPlan.trial_days !== null}
+                    onChange={(e) =>
+                      setCurrentSubscriptionPlan({
+                        ...currentSubscriptionPlan,
+                        trial_days: e.target.checked ? 7 : null,
+                      })
+                    }
+                  />
+                  <Label htmlFor="trial">7 días gratis</Label>
+                </div>
                 <div className="space-y-2">
                   <Label>Descripción</Label>
                   <Textarea
                     value={currentSubscriptionPlan.description}
-                    onChange={(e) => setCurrentSubscriptionPlan({ ...currentSubscriptionPlan, description: e.target.value })}
+                    onChange={(e) =>
+                      setCurrentSubscriptionPlan({
+                        ...currentSubscriptionPlan,
+                        description: e.target.value,
+                      })
+                    }
                     placeholder="Descripción del plan..."
                     rows={3}
                   />
@@ -1418,14 +1801,17 @@ const AdminPage = () => {
                     >
                       {isNegative ? "Negativa" : "Positiva"}
                     </Button>
-                    <Button onClick={addPlanFeature} variant="outline" size="icon">
+                    <Button
+                      onClick={addPlanFeature}
+                      variant="outline"
+                      size="icon"
+                    >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {currentSubscriptionPlan.features?.map((feature, index) => {
                       const negative = isNegativeFeature(feature);
-
                       return (
                         <Badge
                           key={index}
@@ -1435,7 +1821,6 @@ const AdminPage = () => {
                           }`}
                         >
                           {negative ? "✖" : "✔"} {normalizeFeature(feature)}
-
                           <Trash2
                             className="h-3 w-3 cursor-pointer hover:text-destructive"
                             onClick={() => removePlanFeature(index)}
@@ -1451,7 +1836,12 @@ const AdminPage = () => {
                     type="checkbox"
                     id="active"
                     checked={currentSubscriptionPlan.active}
-                    onChange={(e) => setCurrentSubscriptionPlan({ ...currentSubscriptionPlan, active: e.target.checked })}
+                    onChange={(e) =>
+                      setCurrentSubscriptionPlan({
+                        ...currentSubscriptionPlan,
+                        active: e.target.checked,
+                      })
+                    }
                   />
                   <Label htmlFor="active">Plan activo</Label>
                 </div>
@@ -1483,7 +1873,12 @@ const AdminPage = () => {
                     <Label>Nombre *</Label>
                     <Input
                       value={currentAchievement.name}
-                      onChange={(e) => setCurrentAchievement({ ...currentAchievement, name: e.target.value })}
+                      onChange={(e) =>
+                        setCurrentAchievement({
+                          ...currentAchievement,
+                          name: e.target.value,
+                        })
+                      }
                       placeholder="Primer Curso Completado"
                       className="min-h-[44px] text-base"
                     />
@@ -1492,7 +1887,12 @@ const AdminPage = () => {
                     <Label>Ícono</Label>
                     <Input
                       value={currentAchievement.icon}
-                      onChange={(e) => setCurrentAchievement({ ...currentAchievement, icon: e.target.value })}
+                      onChange={(e) =>
+                        setCurrentAchievement({
+                          ...currentAchievement,
+                          icon: e.target.value,
+                        })
+                      }
                       placeholder="🏆"
                       className="min-h-[44px] text-base"
                     />
@@ -1501,17 +1901,32 @@ const AdminPage = () => {
                     <Label>Tipo de activación *</Label>
                     <Select
                       value={currentAchievement.trigger_type}
-                      onValueChange={(value) => setCurrentAchievement({ ...currentAchievement, trigger_type: value })}
+                      onValueChange={(value) =>
+                        setCurrentAchievement({
+                          ...currentAchievement,
+                          trigger_type: value,
+                        })
+                      }
                     >
                       <SelectTrigger className="min-h-[44px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="max-h-[200px]">
-                        <SelectItem value="course_completed">Curso completado</SelectItem>
-                        <SelectItem value="lesson_completed">Lección completada</SelectItem>
-                        <SelectItem value="login_streak">Racha de logins</SelectItem>
-                        <SelectItem value="courses_enrolled">Cursos inscritos</SelectItem>
-                        <SelectItem value="comments_created">Comentarios</SelectItem>
+                        <SelectItem value="course_completed">
+                          Curso completado
+                        </SelectItem>
+                        <SelectItem value="lesson_completed">
+                          Lección completada
+                        </SelectItem>
+                        <SelectItem value="login_streak">
+                          Racha de logins
+                        </SelectItem>
+                        <SelectItem value="courses_enrolled">
+                          Cursos inscritos
+                        </SelectItem>
+                        <SelectItem value="comments_created">
+                          Comentarios
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1520,7 +1935,12 @@ const AdminPage = () => {
                     <Input
                       type="number"
                       value={currentAchievement.trigger_value}
-                      onChange={(e) => setCurrentAchievement({ ...currentAchievement, trigger_value: parseInt(e.target.value) || 1 })}
+                      onChange={(e) =>
+                        setCurrentAchievement({
+                          ...currentAchievement,
+                          trigger_value: parseInt(e.target.value) || 1,
+                        })
+                      }
                       placeholder="1"
                       className="min-h-[44px] text-base"
                       inputMode="numeric"
@@ -1532,7 +1952,12 @@ const AdminPage = () => {
                   <Label>Descripción</Label>
                   <Textarea
                     value={currentAchievement.description}
-                    onChange={(e) => setCurrentAchievement({ ...currentAchievement, description: e.target.value })}
+                    onChange={(e) =>
+                      setCurrentAchievement({
+                        ...currentAchievement,
+                        description: e.target.value,
+                      })
+                    }
                     placeholder="Descripción del logro..."
                     rows={3}
                     className="min-h-[100px] text-base resize-none"
@@ -1544,18 +1969,35 @@ const AdminPage = () => {
                     type="checkbox"
                     id="achievement-active"
                     checked={currentAchievement.active}
-                    onChange={(e) => setCurrentAchievement({ ...currentAchievement, active: e.target.checked })}
+                    onChange={(e) =>
+                      setCurrentAchievement({
+                        ...currentAchievement,
+                        active: e.target.checked,
+                      })
+                    }
                     className="w-5 h-5"
                   />
-                  <Label htmlFor="achievement-active" className="text-base cursor-pointer">Logro activo</Label>
+                  <Label
+                    htmlFor="achievement-active"
+                    className="text-base cursor-pointer"
+                  >
+                    Logro activo
+                  </Label>
                 </div>
 
                 <div className="flex gap-3 flex-col sm:flex-row">
-                  <Button onClick={saveAchievement} className="min-h-[44px] text-base flex-1">
+                  <Button
+                    onClick={saveAchievement}
+                    className="min-h-[44px] text-base flex-1"
+                  >
                     <Save className="h-4 w-4 mr-2" />
                     {editingAchievement ? "Actualizar" : "Crear"} Logro
                   </Button>
-                  <Button variant="outline" onClick={resetAchievementForm} className="min-h-[44px] text-base">
+                  <Button
+                    variant="outline"
+                    onClick={resetAchievementForm}
+                    className="min-h-[44px] text-base"
+                  >
                     Cancelar
                   </Button>
                 </div>
@@ -1563,19 +2005,34 @@ const AdminPage = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <AdminQuizEditor
+          lessonId={quizEditorLessonId}
+          open={quizEditorOpen}
+          onClose={() => setQuizEditorOpen(false)}
+        />
       </div>
 
-      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+      <AlertDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente {deleteDialog.type === 'plan' ? 'el plan de suscripción' : 'el logro'} "{deleteDialog.name}".
+              Esta acción no se puede deshacer. Esto eliminará permanentemente{" "}
+              {deleteDialog.type === "plan"
+                ? "el plan de suscripción"
+                : "el logro"}{" "}
+              "{deleteDialog.name}".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>Eliminar</AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
+              Eliminar
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
