@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Lock,
@@ -26,189 +26,107 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { fetchCourses_API } from "@/api/admin";
-import { getCurrentUser } from "@/api/auth";
-import { getUserSubscriptions, Subscription } from "@/api/subscriptions";
 import { toast } from "sonner";
 import PaypalCheckout from "@/components/Paypalbutton";
 import AuthDialog from "@/components/AuthDialog";
 import { API_URL } from "@/config/api";
-import { CourseRating, getCourseRating } from "@/api/courses";
+import { getCoursesPageData } from "@/api/courses";
+
+/* =========================
+   Tipos
+========================= */
 
 type UserState = "guest" | "logged-in";
 
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  long_description?: string;
+  level: string;
+  duration: string;
+  students: number;
+  image?: string;
+  category: "básico" | "premium";
+  features: string[];
+
+  price: number | null;
+
+  rating_average: number;
+  rating_count: number;
+
+  purchased: boolean;
+  has_active_subscription: boolean;
+}
+
 const CoursesPage = () => {
   const navigate = useNavigate();
+
+  // Estado principal
   const [userState, setUserState] = useState<UserState>("guest");
-  const [courses, setCourses] = useState<any[]>([]);
-  const [purchasedCourses, setPurchasedCourses] = useState<Set<string>>(
-    new Set()
-  );
-  const [loadingUser, setLoadingUser] = useState(true);
-  const [courseToPay, setCourseToPay] = useState<any | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterCategory, setFilterCategory] = useState<
-    "all" | "básico" | "premium"
-  >("all");
-  const [filterLevel, setFilterLevel] = useState<
-    "all" | "básico" | "intermedio" | "avanzado"
-  >("all");
-  const [filterRating, setFilterRating] = useState<
-    "all" | "4" | "3" | "2" | "1"
-  >("all");
-  const [authDialogOpen, setAuthDialogOpen] = useState(false);
-  const [loadingAccess, setLoadingAccess] = useState(true);
-  const [courseRatings, setCourseRatings] = useState<Record<string, CourseRating>>({});
+  const [courses, setCourses] = useState<Course[]>([]);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
-  const [subscriptionInfo, setSubscriptionInfo] = useState<Subscription | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const loadPurchasedCourses = async () => {
-    const response = await fetch(`${API_URL}/api/mycourses`, {
-      credentials: "include",
-    });
+  // UI
+  const [courseToPay, setCourseToPay] = useState<Course | null>(null);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
-    if (!response.ok) {
-      throw new Error("No se pudieron cargar los cursos comprados");
-    }
+  // Filtros
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState<"all" | "básico" | "premium">("all");
+  const [filterLevel, setFilterLevel] = useState<"all" | "básico" | "intermedio" | "avanzado">("all");
+  const [filterRating, setFilterRating] = useState<"all" | "4" | "3" | "2" | "1">("all");
 
-    const data = await response.json();
-    setPurchasedCourses(new Set(data.courseIds));
-  };
 
-  // Verificar autenticación
   useEffect(() => {
-    const loadUserAndPurchases = async () => {
+    const loadCoursesPage = async () => {
       try {
-        const user = await getCurrentUser();
-
-        if (!user) {
-          setUserState("guest");
-          return;
-        }
-
-        setUserState("logged-in");
-
-        await loadPurchasedCourses();
-
-        // Verificar si tiene suscripción activa o cancelada pero no expirada
-        try {
-          const subs = await getUserSubscriptions();
-          const now = new Date();
-          const hasValidSubscription = subs.some(sub => 
-            sub.status === true || (sub.status === false && sub.end_time && new Date(sub.end_time) > now)
-          );
-          setHasActiveSubscription(hasValidSubscription);
-          
-          // Guardar información de suscripción para mostrar mensajes
-          const activeSub = subs.find(sub => sub.status === true);
-          const expiredCancelledSub = subs.find(sub => 
-            sub.status === false && sub.end_time && new Date(sub.end_time) > now
-          );
-          setSubscriptionInfo(activeSub || expiredCancelledSub);
-        } catch (error) {
-          console.warn("Error checking subscriptions:", error);
-          setHasActiveSubscription(false);
-          setSubscriptionInfo(null);
-        }
-      } catch {
-        setUserState("guest");
+       const data = await getCoursesPageData();
+        setCourses(data.courses);
+        setHasActiveSubscription(data.user.hasActiveSubscription);
+        setUserState(data.user.authenticated ? "logged-in" : "guest");
+      } catch (err) {
+        toast.error("No se pudieron cargar los cursos");
       } finally {
-        setLoadingAccess(false);
+        setLoading(false);
       }
     };
 
-    loadUserAndPurchases();
+    loadCoursesPage();
   }, []);
 
-  // Cargar cursos
-  useEffect(() => {
-    const loadCourses = async () => {
-      try {
-        const coursesData = await fetchCourses_API();
-        setCourses(coursesData);
-      } catch (error) {
-        toast.error(`Error al cargar los cursos. ${(error as Error).message}`);
-      }
-    };
 
-    loadCourses();
-  }, []);
-
-  useEffect(() => {
-  const loadRatings = async () => {
-    const ratings: Record<string, CourseRating> = {};
-
-    await Promise.all(
-      courses.map(async (course) => {
-        try {
-          const rating = await getCourseRating(course.id);
-          ratings[course.id] = rating;
-        } catch {
-          ratings[course.id] = {
-            average: 0,
-            count: 0,
-            user_rating: null,
-          };
-        }
-      })
-    );
-
-    setCourseRatings(ratings);
-  };
-
-  if (courses.length > 0) {
-    loadRatings();
-  }
-}, [courses]);
-
-  const CourseCategoryBadge = ({ category }: { category: "premium" | "básico" }) => {
-    if (category === "premium") {
-      return (
-        <div className="flex items-center space-x-1">
-          <Star className="h-3 w-3 fill-current text-yellow-500" />
-          <span>Premium</span>
-        </div>
-      );
-    }
-    
-    return (
+  const CourseCategoryBadge = ({ category }: { category: "premium" | "básico" }) =>
+    category === "premium" ? (
+      <div className="flex items-center space-x-1">
+        <Star className="h-3 w-3 fill-current text-yellow-500" />
+        <span>Premium</span>
+      </div>
+    ) : (
       <div className="flex items-center space-x-1">
         <Unlock className="h-3 w-3 text-primary" />
         <span>Básico</span>
       </div>
     );
-  };
 
-
-  const getActionButton = (course) => {
-    if (loadingAccess) {
-      return (
-        <Button disabled className="w-full opacity-70">
-          Cargando...
-        </Button>
-      );
+  const getActionButton = (course: Course) => {
+    if (loading) {
+      return <Button disabled className="w-full">Cargando...</Button>;
     }
 
     if (userState === "guest") {
       return (
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={() => setAuthDialogOpen(true)}
-        >
+        <Button variant="outline" className="w-full" onClick={() => setAuthDialogOpen(true)}>
           <Lock className="h-4 w-4 mr-2" />
           Inicia sesión
         </Button>
       );
     }
 
-    if (purchasedCourses.has(course.id) || hasActiveSubscription) {
+    if (course.purchased || hasActiveSubscription) {
       return (
-        <Button
-          variant="hero"
-          className="w-full"
-          onClick={() => navigate(`/curso/${course.id}`)}
-        >
+        <Button variant="hero" className="w-full" onClick={() => navigate(`/curso/${course.id}`)}>
           <Play className="h-4 w-4 mr-2" />
           Ver curso
         </Button>
@@ -217,55 +135,36 @@ const CoursesPage = () => {
 
     return (
       <div className="space-y-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-              onClick={() => navigate(`/curso/${course.id}/preview`)}
-            >
-              <Play className="h-4 w-4 mr-2" />
-              Ver Vista Previa
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Ve una muestra del curso antes de comprarlo</p>
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="hero"
-              className="w-full shadow-elegant"
-              onClick={() => setCourseToPay(course)}
-            >
-              Comprar Curso
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Adquiere acceso completo a este curso premium</p>
-          </TooltipContent>
-        </Tooltip>
+        <Button
+          variant="outline"
+          className="w-full border-primary text-primary"
+          onClick={() => navigate(`/curso/${course.id}/preview`)}
+        >
+          <Play className="h-4 w-4 mr-2" />
+          Vista previa
+        </Button>
+
+        <Button
+          variant="hero"
+          className="w-full"
+          onClick={() => setCourseToPay(course)}
+        >
+          Comprar curso
+        </Button>
       </div>
     );
   };
 
-  const filteredCourses = courses
-    .filter(
-      (course) =>
-        course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.description.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .filter(
-      (course) => filterCategory === "all" || course.category === filterCategory
-    )
-    .filter((course) => filterLevel === "all" || course.level === filterLevel)
-    .filter((course) => {
-      if (filterRating === "all") return true;
-
-      const rating = courseRatings[course.id]?.average ?? 0;
-      return rating >= parseInt(filterRating);
-    });
+  const filteredCourses = useMemo(() => {
+    return courses
+      .filter(c =>
+        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.description.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .filter(c => filterCategory === "all" || c.category === filterCategory)
+      .filter(c => filterLevel === "all" || c.level === filterLevel)
+      .filter(c => filterRating === "all" || c.rating_average >= Number(filterRating));
+  }, [courses, searchQuery, filterCategory, filterLevel, filterRating]);
 
   return (
     <div className="min-h-screen">
@@ -387,7 +286,7 @@ const CoursesPage = () => {
 
             {/* Courses Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredCourses.map((course) => {const category = course.category?.toLowerCase().trim(); return (
+              {filteredCourses.map((course) => {const category = course.category; return (
                 <Card
                   key={course.id}
                   className="bg-gradient-card shadow-elegant border-primary/20 overflow-hidden group hover:shadow-warm transition-all duration-300 hover:scale-105 flex flex-col"
@@ -428,15 +327,9 @@ const CoursesPage = () => {
                       </div>
                       <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                         <Star className="h-4 w-4 fill-current text-yellow-500" />
-                        <span>
-                          {
-                            courseRatings[course.id]
-                            ? courseRatings[course.id].average.toFixed(1)
-                            : "0.0"
-                          }
-                        </span>
+                        <span>{course.rating_average.toFixed(1)}</span>
                         <span className="text-xs text-muted-foreground">
-                          ({courseRatings[course.id]?.count ?? 0})
+                          ({course.rating_count})
                         </span>
                       </div>
                     </div>
@@ -488,18 +381,17 @@ const CoursesPage = () => {
                   </div>
                 </Card>
               )})}
-              {courseToPay && (
+              {courseToPay && courseToPay.price !== null && (
                 <PaypalCheckout
-                  course={courseToPay}
+                  course={{
+                    id: courseToPay.id,
+                    title: courseToPay.title,
+                    price: courseToPay.price,
+                  }}
                   onClose={() => setCourseToPay(null)}
-                  onSuccess={async () => {
-                    try {
-                      await loadPurchasedCourses();
-
-                      toast.success("¡Curso comprado con éxito! 🎉");
-                    } finally {
-                      setCourseToPay(null);
-                    }
+                  onSuccess={() => {
+                    toast.success("¡Curso comprado con éxito! 🎉");
+                    setCourseToPay(null);
                   }}
                 />
               )}

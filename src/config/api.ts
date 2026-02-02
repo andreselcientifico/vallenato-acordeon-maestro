@@ -1,1 +1,1 @@
-export const API_URL = "https://href-bringing-origins-clearing.trycloudflare.com";
+export const API_URL = "/back";

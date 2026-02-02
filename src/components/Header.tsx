@@ -52,13 +52,21 @@ const Header = memo(() => {
           setSubscriptionStatus({ hasValidSubscription: false, isActive: false });
         }
       } catch (error) {
-        console.error('Error loading subscription status:', error);
         setSubscriptionStatus({ hasValidSubscription: false, isActive: false });
       }
     };
 
     loadSubscriptionStatus();
   }, [user]);
+
+  const avatarLetters =
+    (user as any)?.avatar ||
+    user?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase() ||
+    "U";
 
   const HeaderSkeleton = () => (
     <div className="flex items-center space-x-4">
@@ -124,10 +132,10 @@ const Header = memo(() => {
         </div>
         
         <nav className="hidden md:flex items-center space-x-8">
-          <a href="#inicio" className="text-foreground hover:text-primary transition-smooth">
+          <a href="/#inicio" className="text-foreground hover:text-primary transition-smooth">
             Inicio
           </a>
-          <a href="#biografia" className="text-foreground hover:text-primary transition-smooth">
+          <a href="/#biografia" className="text-foreground hover:text-primary transition-smooth">
             Biografía
           </a>
           <a href="/cursos" className="text-foreground hover:text-primary transition-smooth">
@@ -139,7 +147,7 @@ const Header = memo(() => {
           {/* <a href="#videos" className="text-foreground hover:text-primary transition-smooth">
             Videos
           </a> */}
-          <a href="#contacto" className="text-foreground hover:text-primary transition-smooth">
+          <a href="/contacto" className="text-foreground hover:text-primary transition-smooth">
             Contacto
           </a>
         </nav>
@@ -163,13 +171,7 @@ const Header = memo(() => {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="lg" className="flex items-center space-x-2 p-2">
                 <div className="w-8 h-8 bg-gradient-accent rounded-full flex items-center justify-center text-white text-lg font-bold">
-                  {(user as any).avatar || (user.name
-                    ? user.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .toUpperCase()
-                    : "U")}
+                  {avatarLetters}
                 </div>
                 {subscriptionStatus.hasValidSubscription && (
                   <div className="flex items-center space-x-1 ml-1">
@@ -222,10 +224,10 @@ const Header = memo(() => {
         <div className="fixed top-20 left-0 w-full h-[calc(100%-5rem)] bg-white dark:bg-slate-900 z-50 md:hidden shadow-xl">
           <div className="px-6 py-6 space-y-6">
             <nav className="flex flex-col space-y-4">
-              <a href="#inicio" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
+              <a href="/#inicio" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
                 Inicio
               </a>
-              <a href="#biografia" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
+              <a href="/#biografia" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
                 Biografía
               </a>
               <button onClick={() => { navigate('/cursos'); setMobileOpen(false); }} className="text-left text-lg font-medium text-foreground hover:text-primary">
@@ -234,10 +236,7 @@ const Header = memo(() => {
               <button onClick={() => { navigate('/suscripciones'); setMobileOpen(false); }} className="text-left text-lg font-medium text-foreground hover:text-primary">
                 Suscripciones
               </button>
-              {/* <a href="#videos" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
-                Videos
-              </a> */}
-              <a href="#contacto" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
+              <a href="/contacto" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
                 Contacto
               </a>
             </nav>
