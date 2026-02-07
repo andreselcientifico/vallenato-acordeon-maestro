@@ -131,6 +131,7 @@ const ChangePasswordPage = () => {
                   type={showCurrentPassword ? "text" : "password"}
                   value={formData.currentPassword}
                   onChange={(e) => handleInputChange("currentPassword", e.target.value)}
+                  autoComplete="current-password"
                   placeholder="Ingresa tu contraseña actual"
                   className="pr-10"
                 />
@@ -159,6 +160,7 @@ const ChangePasswordPage = () => {
                   type={showNewPassword ? "text" : "password"}
                   value={formData.newPassword}
                   onChange={(e) => handleInputChange("newPassword", e.target.value)}
+                  autoComplete="new-password"
                   placeholder="Ingresa tu nueva contraseña"
                   className="pr-10"
                 />
@@ -187,6 +189,7 @@ const ChangePasswordPage = () => {
                   type={showConfirmPassword ? "text" : "password"}
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                  autoComplete="new-password"
                   placeholder="Confirma tu nueva contraseña"
                   className="pr-10"
                 />

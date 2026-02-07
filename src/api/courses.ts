@@ -6,7 +6,7 @@ export type Lesson = {
   title: string;
   duration?: string; // El backend lo envía como Option<String>, por lo que es opcional
   completed?: boolean; // El backend lo envía como bool, pero LessonDto en el BE lo envuelve en Option<bool> por la tabla de progreso
-  type: 'video' | 'exercise' | 'quiz' | string; // Permitir que sea string si el enum de BE tiene más tipos
+  type: "video" | "exercise" | "quiz" | string; // Permitir que sea string si el enum de BE tiene más tipos
   content_url?: string; // Corregir de videoUrl a content_url (lo que envía el BE)
   description?: string;
   order: number; // Añadir el orden para la iteración
@@ -42,7 +42,9 @@ export type CourseDetails = {
   modules: Module[];
 };
 
-export async function getCourseDetails(courseId: string): Promise<CourseDetails> {
+export async function getCourseDetails(
+  courseId: string,
+): Promise<CourseDetails> {
   const res = await fetch(`${API_URL}/api/courses/${courseId}/videos`, {
     method: "GET",
     credentials: "include", // 👈 cookies HttpOnly
@@ -69,12 +71,12 @@ export async function getCourseDetails(courseId: string): Promise<CourseDetails>
     image: data.image,
     category: data.category,
     features: data.features,
-    
+
     // Mapeo de campos de resumen
-    instructor: data.instructor || 'N/A',
+    instructor: data.instructor || "N/A",
     total_lessons: data.total_lessons || 0,
     completed_lessons: data.completed_lessons || 0,
-    total_duration: data.total_duration || 'N/A',
+    total_duration: data.total_duration || "N/A",
 
     modules: data.modules.map((m: any) => ({
       id: m.id,
@@ -90,13 +92,13 @@ export async function getCourseDetails(courseId: string): Promise<CourseDetails>
         content_url: l.content_url, // Usar el campo correcto
         description: l.description,
         order: l.order,
-      }))
-    }))
+      })),
+    })),
   };
 }
 
 export async function getCoursesPageData() {
-  const res = await fetch(`${API_URL}/api/courses-page`, {
+  const res = await fetch(`${API_URL}/courses/courses-page`, {
     method: "GET",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -110,7 +112,9 @@ export async function getCoursesPageData() {
   return res.json();
 }
 
-export async function getCourseDetails_preview(courseId: string): Promise<CourseDetails> {
+export async function getCourseDetails_preview(
+  courseId: string,
+): Promise<CourseDetails> {
   const res = await fetch(`${API_URL}/api/courses/${courseId}/videos/preview`, {
     method: "GET",
     credentials: "include", // 👈 cookies HttpOnly
@@ -137,12 +141,12 @@ export async function getCourseDetails_preview(courseId: string): Promise<Course
     image: data.image,
     category: data.category,
     features: data.features,
-    
+
     // Mapeo de campos de resumen
-    instructor: data.instructor || 'N/A',
+    instructor: data.instructor || "N/A",
     total_lessons: data.total_lessons || 0,
     completed_lessons: data.completed_lessons || 0,
-    total_duration: data.total_duration || 'N/A',
+    total_duration: data.total_duration || "N/A",
 
     modules: data.modules.map((m: any) => ({
       id: m.id,
@@ -158,8 +162,8 @@ export async function getCourseDetails_preview(courseId: string): Promise<Course
         content_url: l.content_url, // Usar el campo correcto
         description: l.description,
         order: l.order,
-      }))
-    }))
+      })),
+    })),
   };
 }
 
@@ -192,7 +196,10 @@ export async function getLessonComments(lessonId: string): Promise<Comment[]> {
   return res.json();
 }
 
-export async function createLessonComment(LessonId: string, content: string): Promise<Comment> {
+export async function createLessonComment(
+  LessonId: string,
+  content: string,
+): Promise<Comment> {
   const res = await fetch(`${API_URL}/api/courses/${LessonId}/comments`, {
     method: "POST",
     credentials: "include",
@@ -207,12 +214,18 @@ export async function createLessonComment(LessonId: string, content: string): Pr
   return res.json();
 }
 
-export async function deleteLessonComment(lessonId: string, commentId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/api/courses/${lessonId}/comments/${commentId}`, {
-    method: "DELETE",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-  });
+export async function deleteLessonComment(
+  lessonId: string,
+  commentId: string,
+): Promise<void> {
+  const res = await fetch(
+    `${API_URL}/api/courses/${lessonId}/comments/${commentId}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 
   if (!res.ok) {
     await handleApiError(res, "Error al eliminar comentario");
@@ -234,7 +247,10 @@ export async function getCourseRating(courseId: string): Promise<CourseRating> {
   return res.json();
 }
 
-export async function rateCourse(courseId: string, rating: number): Promise<void> {
+export async function rateCourse(
+  courseId: string,
+  rating: number,
+): Promise<void> {
   const res = await fetch(`${API_URL}/api/courses/${courseId}/rating`, {
     method: "POST",
     credentials: "include",

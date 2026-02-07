@@ -151,6 +151,7 @@ const ResetPasswordPage = () => {
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={(e) => handleInputChange("password", e.target.value)}
+                  autoComplete="new-password"
                   placeholder="Ingresa tu nueva contraseña"
                   className="pr-10"
                 />
@@ -179,6 +180,7 @@ const ResetPasswordPage = () => {
                   type={showConfirmPassword ? "text" : "password"}
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                  autoComplete="new-password"
                   placeholder="Confirma tu nueva contraseña"
                   className="pr-10"
                 />

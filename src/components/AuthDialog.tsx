@@ -120,6 +120,7 @@ const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) 
                     onChange={(e) =>
                       setLoginForm({ ...loginForm, email: e.target.value })
                     }
+                    autoComplete="email"
                     required
                   />
                 </div>
@@ -138,6 +139,7 @@ const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) 
                     onChange={(e) =>
                       setLoginForm({ ...loginForm, password: e.target.value })
                     }
+                    autoComplete="current-password"
                     required
                   />
                   <Button
@@ -195,6 +197,7 @@ const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) 
                     onChange={(e) =>
                       setRegisterForm({ ...registerForm, name: e.target.value })
                     }
+                    autoComplete="name"
                     required
                   />
                 </div>
@@ -216,6 +219,7 @@ const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) 
                         email: e.target.value,
                       })
                     }
+                    autoComplete="email"
                     required
                   />
                 </div>
@@ -237,6 +241,7 @@ const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) 
                         password: e.target.value,
                       })
                     }
+                    autoComplete="new-password"
                     required
                   />
                   <Button
@@ -271,6 +276,7 @@ const AuthDialog = ({ children, open, onOpenChange, onLogin }: AuthDialogProps) 
                         confirmPassword: e.target.value,
                       })
                     }
+                    autoComplete="new-password"
                     required
                   />
                 </div>

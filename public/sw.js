@@ -1,7 +1,7 @@
 // sw.js
-const STATIC_CACHE = "vallenato-static-v4";
-const RUNTIME_CACHE = "vallenato-runtime-v4";
-const API_CACHE = "vallenato-api-v4";
+const STATIC_CACHE = "vallenato-static-v5";
+const RUNTIME_CACHE = "vallenato-runtime-v5";
+const API_CACHE = "vallenato-api-v5";
 const MAX_CACHE_ITEMS = 50;
 
 /* ============================
@@ -21,13 +21,15 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys
-          .filter((key) => ![STATIC_CACHE, RUNTIME_CACHE, API_CACHE].includes(key))
+          .filter(
+            (key) => ![STATIC_CACHE, RUNTIME_CACHE, API_CACHE].includes(key),
+          )
           .map((key) => {
             console.log(`🗑️ Deleting old cache: ${key}`);
             return caches.delete(key);
-          })
+          }),
       );
-    })
+    }),
   );
 
   self.clients.claim();
@@ -41,7 +43,7 @@ self.addEventListener("activate", (event) => {
 async function cleanCache(cacheName, maxItems = MAX_CACHE_ITEMS) {
   const cache = await caches.open(cacheName);
   const keys = await cache.keys();
-  
+
   if (keys.length > maxItems) {
     // Borrar los items más antiguos
     for (let i = 0; i < keys.length - maxItems; i++) {
@@ -52,10 +54,10 @@ async function cleanCache(cacheName, maxItems = MAX_CACHE_ITEMS) {
 
 // Crear respuesta de error offline
 function createErrorResponse(status = 503, message = "Offline") {
-  return new Response(
-    JSON.stringify({ error: message, offline: true }),
-    { status, headers: { "Content-Type": "application/json" } }
-  );
+  return new Response(JSON.stringify({ error: message, offline: true }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 /* ============================
@@ -65,19 +67,18 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // ❌ Solo maneja GET
-  if (request.method !== "GET") {
+  // ✅ FILTRO CRÍTICO: Ignorar esquemas que no sean http o https
+  // Esto elimina el error "Request scheme 'chrome-extension' is unsupported"
+  if (!request.url.startsWith("http")) {
     return;
   }
 
-  // ❌ NO cachear HTML (SPA necesita backend siempre)
+  // ❌ Solo maneja GET
+  if (request.method !== "GET") return;
+
+  // ❌ NO cachear HTML
   if (request.headers.get("accept")?.includes("text/html")) {
-    event.respondWith(
-      fetch(request).catch(() => {
-        // Si falla el HTML, devolver offline
-        return createErrorResponse();
-      })
-    );
+    event.respondWith(fetch(request).catch(() => createErrorResponse()));
     return;
   }
 
@@ -90,9 +91,7 @@ self.addEventListener("fetch", (event) => {
     url.pathname.startsWith("/mis-cursos") ||
     url.pathname.startsWith("/mis-logros")
   ) {
-    event.respondWith(
-      fetch(request).catch(() => createErrorResponse())
-    );
+    event.respondWith(fetch(request).catch(() => createErrorResponse()));
     return;
   }
 
@@ -101,13 +100,11 @@ self.addEventListener("fetch", (event) => {
     url.pathname.startsWith("/api/auth") ||
     url.pathname.startsWith("/api/users/me")
   ) {
-    event.respondWith(
-      fetch(request).catch(() => createErrorResponse())
-    );
+    event.respondWith(fetch(request).catch(() => createErrorResponse()));
     return;
   }
 
-  // ✅ Assets estáticos reales → Cache First
+  // ✅ ASSETS (CSS, JS, Imágenes) -> Cache First
   if (
     request.destination === "script" ||
     request.destination === "style" ||
@@ -116,76 +113,49 @@ self.addEventListener("fetch", (event) => {
   ) {
     event.respondWith(
       caches.match(request).then(async (cached) => {
-        if (cached) {
-          return cached;
-        }
+        if (cached) return cached;
 
         try {
           const response = await fetch(request);
-          
-          // Solo cachear si es exitoso (status 200)
-          if (response && response.status === 200) {
+          // Solo cachear si la respuesta es válida
+          if (
+            response &&
+            response.status === 200 &&
+            response.type === "basic"
+          ) {
             const cache = await caches.open(STATIC_CACHE);
+            // Clonamos la respuesta para poder guardarla y devolverla
             cache.put(request, response.clone());
-            await cleanCache(STATIC_CACHE);
+            event.waitUntil(cleanCache(STATIC_CACHE));
           }
-          
           return response;
         } catch (error) {
-          console.error(`❌ Fetch error for ${request.url}:`, error);
-          // Retornar respuesta en cache si está disponible
-          return cached || createErrorResponse();
+          return createErrorResponse();
         }
-      })
+      }),
     );
     return;
   }
 
-  // 🟡 API pública → Network First con timeout
+  // 🟡 API -> Network First
   if (url.pathname.startsWith("/api")) {
     event.respondWith(
-      Promise.race([
-        fetch(request)
-          .then((response) => {
-            // ✅ Solo cachear si es exitoso (2xx)
-            if (response && response.status >= 200 && response.status < 300) {
-              const cache = caches.open(API_CACHE);
-              cache.then((c) => {
-                c.put(request, response.clone());
-                cleanCache(API_CACHE);
-              });
-            } else if (response && response.status >= 400) {
-              // ❌ NO cachear errores (4xx, 5xx)
-              console.warn(`API error ${response.status}: ${request.url}`);
-            }
-            return response;
-          }),
-        // Timeout de 8 segundos
-        new Promise((resolve) => {
-          setTimeout(() => {
-            resolve(null);
-          }, 8000);
-        })
-      ])
+      fetch(request)
         .then(async (response) => {
-          // Si timeout o error, usar cache
-          if (!response) {
-            console.warn(`⏱️ Timeout/Failed - Using cache for: ${request.url}`);
-            const cached = await caches.match(request);
-            return cached || createErrorResponse(504, "Request Timeout");
+          if (response && response.status >= 200 && response.status < 300) {
+            const cache = await caches.open(API_CACHE);
+            // IMPORTANTE: Clonar siempre antes de usar .put()
+            cache.put(request, response.clone());
+            event.waitUntil(cleanCache(API_CACHE));
+            return response;
           }
           return response;
         })
-        .catch(async (error) => {
-          console.error(`🔴 API Fetch error: ${request.url}`, error);
-          // Si error de red, intentar cache
+        .catch(async () => {
+          // Si falla la red, buscar en cache
           const cached = await caches.match(request);
-          if (cached) {
-            console.log(`✅ Returning cached response for: ${request.url}`);
-            return cached;
-          }
-          return createErrorResponse();
-        })
+          return cached || createErrorResponse();
+        }),
     );
     return;
   }

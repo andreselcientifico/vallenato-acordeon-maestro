@@ -29,7 +29,6 @@ import {
 import { toast } from "sonner";
 import PaypalCheckout from "@/components/Paypalbutton";
 import AuthDialog from "@/components/AuthDialog";
-import { API_URL } from "@/config/api";
 import { getCoursesPageData } from "@/api/courses";
 
 /* =========================

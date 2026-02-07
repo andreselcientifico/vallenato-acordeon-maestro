@@ -10,7 +10,6 @@ const Index = () => {
       <LazyHeader />
       <Hero />
       <Biography />
-      {/* <VideoCarousel /> */}
       <Courses />
       <Footer />
     </div>

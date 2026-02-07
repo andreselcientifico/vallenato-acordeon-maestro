@@ -32,7 +32,7 @@ export async function createQuiz(dto: AdminCreateQuiz) {
   });
   console.log(res);
   if (!res.ok) {
-    throw handleApiError(res, "Error al crear el quiz");
+    await handleApiError(res, "Error al crear el quiz");
   }
   const data = await res.json();
   console.log(data);
@@ -48,7 +48,7 @@ export async function updateQuiz(quizId: string, dto: AdminCreateQuiz) {
   });
 
   if (!res.ok) {
-    throw handleApiError(res, "Error al actualizar el quiz");
+    await handleApiError(res, "Error al actualizar el quiz");
   }
 
   return res.json();
@@ -62,7 +62,7 @@ export async function deleteQuiz(quizId: string) {
   });
 
   if (!res.ok) {
-    throw handleApiError(res, "Error al eliminar el quiz");
+    await handleApiError(res, "Error al eliminar el quiz");
   }
 
   if (res.status === 204) return { deleted: true };

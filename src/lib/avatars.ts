@@ -1,0 +1,50 @@
+export function getRandomAvatar(): string {
+  const seeds = [
+    "Felix",
+    "Aneka",
+    "Callie",
+    "Lola",
+    "Minala",
+    "Create",
+    "Trouble",
+    "Bandit",
+    "Midnight",
+    "Shadow",
+  ];
+  const randomSeed = seeds[Math.floor(Math.random() * seeds.length)];
+  return `https://api.dicebear.com/7.x/notionists/svg?seed=${randomSeed}`;
+}
+
+export const XBOX_AVATARS = [
+  "👽",
+  "👾",
+  "🤖",
+  "👻",
+  "🤡",
+  "👺",
+  "👹",
+  "👿",
+  "💀",
+  "😻",
+  "😎",
+  "🤓",
+  "🤠",
+  "🥳",
+  "😇",
+  "😈",
+  "🦄",
+  "🐲",
+  "🦕",
+  "🦖",
+  "🐳",
+  "🐬",
+  "🐙",
+  "🐵",
+  "🐶",
+  "🐺",
+  "🦊",
+  "🦝",
+  "🦁",
+  "🐯",
+  "🐨",
+];

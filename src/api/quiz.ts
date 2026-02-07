@@ -90,7 +90,7 @@ export async function getQuizByLesson(lessonId: string): Promise<Quiz> {
   });
 
   if (!res.ok) {
-    throw handleApiError(res, "Error al cargar el quiz");
+    await handleApiError(res, "Error al cargar el quiz");
   }
 
   return res.json();
@@ -99,7 +99,9 @@ export async function getQuizByLesson(lessonId: string): Promise<Quiz> {
 /**
  * Obtiene las preguntas de un quiz
  */
-export async function getQuizQuestions(quizId: string): Promise<QuizQuestion[]> {
+export async function getQuizQuestions(
+  quizId: string,
+): Promise<QuizQuestion[]> {
   const res = await fetch(`${API_URL}/api/quiz/${quizId}/questions`, {
     method: "GET",
     credentials: "include",
@@ -107,7 +109,7 @@ export async function getQuizQuestions(quizId: string): Promise<QuizQuestion[]> 
   });
 
   if (!res.ok) {
-    throw handleApiError(res, "Error al cargar las preguntas del quiz");
+    await handleApiError(res, "Error al cargar las preguntas del quiz");
   }
 
   return res.json();
@@ -118,7 +120,7 @@ export async function getQuizQuestions(quizId: string): Promise<QuizQuestion[]> 
  */
 export async function submitQuiz(
   quizId: string,
-  answers: QuizAnswer[]
+  answers: QuizAnswer[],
 ): Promise<QuizResultDto> {
   const res = await fetch(`${API_URL}/api/quiz/${quizId}/submit`, {
     method: "POST",
@@ -128,7 +130,7 @@ export async function submitQuiz(
   });
 
   if (!res.ok) {
-    throw handleApiError(res, "Error al enviar el quiz");
+    await handleApiError(res, "Error al enviar el quiz");
   }
 
   return res.json();
@@ -137,7 +139,9 @@ export async function submitQuiz(
 /**
  * Obtiene el historial de intentos del usuario en un quiz
  */
-export async function getQuizAttempts(quizId: string): Promise<QuizSubmission[]> {
+export async function getQuizAttempts(
+  quizId: string,
+): Promise<QuizSubmission[]> {
   const res = await fetch(`${API_URL}/api/quiz/${quizId}/attempts`, {
     method: "GET",
     credentials: "include",
@@ -145,7 +149,7 @@ export async function getQuizAttempts(quizId: string): Promise<QuizSubmission[]>
   });
 
   if (!res.ok) {
-    throw handleApiError(res, "Error al cargar el historial del quiz");
+    await handleApiError(res, "Error al cargar el historial del quiz");
   }
 
   return res.json();
@@ -155,7 +159,7 @@ export async function getQuizAttempts(quizId: string): Promise<QuizSubmission[]>
  * Obtiene los detalles de un intento de quiz
  */
 export async function getQuizAttemptDetails(
-  submissionId: string
+  submissionId: string,
 ): Promise<QuizResultDto> {
   const res = await fetch(`${API_URL}/api/quiz/attempt/${submissionId}`, {
     method: "GET",
@@ -164,7 +168,7 @@ export async function getQuizAttemptDetails(
   });
 
   if (!res.ok) {
-    throw handleApiError(res, "Error al cargar los detalles del intento");
+    await handleApiError(res, "Error al cargar los detalles del intento");
   }
 
   return res.json();
@@ -183,7 +187,7 @@ export async function getUserCertificates(): Promise<Certificate[]> {
   });
 
   if (!res.ok) {
-    throw handleApiError(res, "Error al cargar los certificados");
+    await handleApiError(res, "Error al cargar los certificados");
   }
 
   return res.json();
@@ -192,7 +196,9 @@ export async function getUserCertificates(): Promise<Certificate[]> {
 /**
  * Obtiene un certificado específico
  */
-export async function getCertificate(certificateId: string): Promise<Certificate> {
+export async function getCertificate(
+  certificateId: string,
+): Promise<Certificate> {
   const res = await fetch(`${API_URL}/api/certificates/${certificateId}`, {
     method: "GET",
     credentials: "include",
@@ -200,7 +206,7 @@ export async function getCertificate(certificateId: string): Promise<Certificate
   });
 
   if (!res.ok) {
-    throw handleApiError(res, "Error al cargar el certificado");
+    await handleApiError(res, "Error al cargar el certificado");
   }
 
   return res.json();
@@ -210,18 +216,18 @@ export async function getCertificate(certificateId: string): Promise<Certificate
  * Descarga un certificado como PDF
  */
 export async function downloadCertificatePDF(
-  certificateId: string
+  certificateId: string,
 ): Promise<Blob> {
   const res = await fetch(
     `${API_URL}/api/certificates/${certificateId}/download`,
     {
       method: "GET",
       credentials: "include",
-    }
+    },
   );
 
   if (!res.ok) {
-    throw handleApiError(res, "Error al descargar el certificado");
+    await handleApiError(res, "Error al descargar el certificado");
   }
 
   return res.blob();

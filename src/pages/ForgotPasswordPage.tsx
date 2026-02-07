@@ -143,6 +143,7 @@ const ForgotPasswordPage = () => {
                   setEmail(e.target.value);
                   if (error) setError("");
                 }}
+                autoComplete="email"
                 placeholder="tu@email.com"
                 className={error ? "border-destructive" : ""}
               />
