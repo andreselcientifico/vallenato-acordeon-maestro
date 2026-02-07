@@ -26,8 +26,8 @@ export async function fetchCoursesAPI() {
     method: "GET",
     credentials: "include",
     headers: {
-      "Content-Type": "application/json"
-    }
+      "Content-Type": "application/json",
+    },
   });
 
   if (!res.ok) {
@@ -35,7 +35,7 @@ export async function fetchCoursesAPI() {
     throw new Error(err.message || "Error al cargar cursos");
   }
 
-  return res.json();  // Esto debe devolver un array de Course
+  return res.json(); // Esto debe devolver un array de Course
 }
 
 export async function fetchCourses_API() {
@@ -52,9 +52,11 @@ export async function fetchCourses_API() {
     throw new Error(err.message || "Error al cargar cursos");
   }
 
-  const courses = await res.json();  // Obtener todos los cursos
+  const courses = await res.json(); // Obtener todos los cursos
   // Ordenamos los cursos por rating de mayor a menor
-  return courses.sort((a: { rating: number }, b: { rating: number }) => b.rating - a.rating);
+  return courses.sort(
+    (a: { rating: number }, b: { rating: number }) => b.rating - a.rating,
+  );
 }
 
 export async function deleteCourseAPI(courseId) {

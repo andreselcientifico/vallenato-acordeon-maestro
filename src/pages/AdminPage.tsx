@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import AdminQuizEditor from "@/components/AdminQuizEditor";
+import EmailBroadcast from "@/components/EmailBroadcast";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -101,9 +102,12 @@ const lessonSchema = z.object({
   duration: z.string(),
   completed: z.boolean().optional(),
   type: z.enum(["video", "exercise", "quiz"], {
-    message: "Tipo de lección inválido"
+    message: "Tipo de lección inválido",
   }),
-  content_url: z.string().url("La URL del contenido no es válida").or(z.literal("")),
+  content_url: z
+    .string()
+    .url("La URL del contenido no es válida")
+    .or(z.literal("")),
   description: z.string(),
   order: z.number().min(1, "El orden debe ser al menos 1"),
 });
@@ -121,7 +125,7 @@ const courseValidationSchema = z.object({
   description: z.string().min(1, "La descripción corta es requerida"),
   longDescription: z.string(),
   level: z.enum(["básico", "intermedio", "avanzado"], {
-    message: "Nivel inválido"
+    message: "Nivel inválido",
   }),
   price: z.number().min(0, "El precio debe ser mayor a 0"),
   duration: z.string(),
@@ -129,7 +133,7 @@ const courseValidationSchema = z.object({
   rating: z.number(),
   image: z.string().url("La URL de la imagen no es válida").or(z.literal("")),
   category: z.enum(["básico", "premium"], {
-    message: "Categoría inválida"
+    message: "Categoría inválida",
   }),
   modules: z.array(moduleSchema),
   features: z.array(z.string()),
@@ -734,7 +738,7 @@ const AdminPage = () => {
 
       const isUpdating = !!currentCourse.id;
       const endpointId = currentCourse.id || undefined;
-      
+
       try {
         const payload = await Payload(currentCourse);
         await saveCourseAPI(payload, endpointId);
@@ -761,7 +765,9 @@ const AdminPage = () => {
       }
     } catch (validationError) {
       if (validationError instanceof z.ZodError) {
-        const errorMessage = validationError.issues.map(err => err.message).join(", ");
+        const errorMessage = validationError.issues
+          .map((err) => err.message)
+          .join(", ");
         toast({
           title: "Error de validación",
           description: errorMessage,
@@ -850,7 +856,7 @@ const AdminPage = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full h-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+          <TabsList className="grid w-full h-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
             <TabsTrigger value="create">
               {editingCourse ? "Editar Curso" : "Crear Curso"}
             </TabsTrigger>
@@ -863,6 +869,7 @@ const AdminPage = () => {
               {editingAchievement ? "Editar Logro" : "Crear Logro"}
             </TabsTrigger>
             <TabsTrigger value="achievements">Logros</TabsTrigger>
+            <TabsTrigger value="emails">📧 Emails</TabsTrigger>
           </TabsList>
 
           {/* CREAR / EDITAR CURSO */}
@@ -2003,6 +2010,11 @@ const AdminPage = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* EMAILS TAB */}
+          <TabsContent value="emails" className="space-y-6">
+            <EmailBroadcast />
           </TabsContent>
         </Tabs>
 

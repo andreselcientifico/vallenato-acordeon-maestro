@@ -10,7 +10,6 @@ export async function getUserProfile() {
     throw new Error("No autorizado");
   }
   const data = await res.json();
-  console.log(data)
   return data;
 }
 

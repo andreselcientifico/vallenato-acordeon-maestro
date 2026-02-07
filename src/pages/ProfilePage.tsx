@@ -73,9 +73,9 @@ const ProfilePage = () => {
 
         // ===== Notificaciones =====
         setNotifications({
-          emailNotifications: user.email_notifications ?? true,
-          courseReminders: user.course_reminders ?? true,
-          newContent: user.new_content ?? true,
+          emailNotifications: user.email_notifications === true,
+          courseReminders: user.course_reminders === true,
+          newContent: user.new_content === true,
           pushNotifications: false,
         });
 
