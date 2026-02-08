@@ -29,16 +29,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { getUserProfile, updateUserProfile, updateNotificationSettings } from "@/api/user";
-import { getUserSubscriptions, cancelSubscription, Subscription } from "@/api/subscriptions";
+import {
+  getUserProfile,
+  updateUserProfile,
+  updateNotificationSettings,
+} from "@/api/user";
+import {
+  getUserSubscriptions,
+  cancelSubscription,
+  Subscription,
+} from "@/api/subscriptions";
 import { Certificate } from "@/api/quiz";
 import { useAuth } from "@/context/AuthContext";
-const CertificatesList = lazy(() => import("@/components/Certificate").then(module => ({ 
-  default: module.CertificatesList 
-})));
-const AvatarSelector = lazy(() => import("@/components/AvatarSelector").then(module => ({
-  default: module.AvatarSelector
-})));
+const CertificatesList = lazy(() =>
+  import("@/components/Certificate").then((module) => ({
+    default: module.CertificatesList,
+  })),
+);
+const AvatarSelector = lazy(() =>
+  import("@/components/AvatarSelector").then((module) => ({
+    default: module.AvatarSelector,
+  })),
+);
 import { getRandomAvatar } from "@/lib/avatars";
 
 const ProfilePage = () => {
@@ -65,7 +77,13 @@ const ProfilePage = () => {
     async function loadProfile() {
       try {
         const res = await getUserProfile();
-        const { user, courses = [], achievements = [], subscriptions = [], certificates = [] } = res.data;
+        const {
+          user,
+          courses = [],
+          achievements = [],
+          subscriptions = [],
+          certificates = [],
+        } = res.data;
 
         // ===== Usuario =====
         setUserInfo(user);
@@ -73,9 +91,9 @@ const ProfilePage = () => {
 
         // ===== Notificaciones =====
         setNotifications({
-          emailNotifications: user.email_notifications === true,
-          courseReminders: user.course_reminders === true,
-          newContent: user.new_content === true,
+          emailNotifications: user.email_notifications ?? true,
+          courseReminders: user.course_reminders ?? true,
+          newContent: user.new_content ?? true,
           pushNotifications: false,
         });
 
@@ -84,7 +102,9 @@ const ProfilePage = () => {
         const hasValidSubscription = subscriptions.some(
           (sub: any) =>
             sub.status === true ||
-            (sub.status === false && sub.end_time && new Date(sub.end_time) > now)
+            (sub.status === false &&
+              sub.end_time &&
+              new Date(sub.end_time) > now),
         );
 
         setSubscriptions(subscriptions);
@@ -106,10 +126,7 @@ const ProfilePage = () => {
           };
         });
 
-
-
         setCoursesData(processedCourses);
-
       } catch (error) {
         toast({
           title: "Sesión no válida",
@@ -125,11 +142,13 @@ const ProfilePage = () => {
     loadProfile();
   }, [navigate, toast]);
 
-
   const handleSave = async () => {
     try {
-      const updatedUser = { ...userInfo, avatar: selectedAvatar };
-      const _ = await updateUserProfile(updatedUser);
+      const updatedUser = {
+        ...userInfo,
+        profile_image_url: selectedAvatar,
+      };
+      await updateUserProfile(updatedUser);
       setUserInfo(updatedUser);
       toast({
         title: "Perfil actualizado",
@@ -154,9 +173,9 @@ const ProfilePage = () => {
     // Mostrar diálogo de confirmación con advertencia
     const confirmed = window.confirm(
       "⚠️ ADVERTENCIA: Al cancelar tu suscripción:\n\n" +
-      "• Perderás acceso a todos los cursos que no tienes asignados actualmente\n" +
-      "• Solo mantendrás acceso a los cursos que has comprado\n" +
-      "¿Estás seguro de que quieres cancelar tu suscripción?"
+        "• Perderás acceso a todos los cursos que no tienes asignados actualmente\n" +
+        "• Solo mantendrás acceso a los cursos que has comprado\n" +
+        "¿Estás seguro de que quieres cancelar tu suscripción?",
     );
 
     if (!confirmed) {
@@ -167,7 +186,8 @@ const ProfilePage = () => {
       await cancelSubscription(subscriptionId);
       toast({
         title: "Suscripción cancelada",
-        description: "Tu suscripción ha sido cancelada. Mantendrás acceso a los cursos comprados.",
+        description:
+          "Tu suscripción ha sido cancelada. Mantendrás acceso a los cursos comprados.",
       });
       // Recargar suscripciones
       const subs = await getUserSubscriptions();
@@ -192,9 +212,13 @@ const ProfilePage = () => {
     try {
       // Enviar cambios al backend
       await updateNotificationSettings({
-        email_notifications: key === 'emailNotifications' ? value : notifications.emailNotifications,
-        course_reminders: key === 'courseReminders' ? value : notifications.courseReminders,
-        new_content: key === 'newContent' ? value : notifications.newContent,
+        email_notifications:
+          key === "emailNotifications"
+            ? value
+            : notifications.emailNotifications,
+        course_reminders:
+          key === "courseReminders" ? value : notifications.courseReminders,
+        new_content: key === "newContent" ? value : notifications.newContent,
       });
 
       toast({
@@ -264,15 +288,28 @@ const ProfilePage = () => {
           <Card className="p-4 sm:p-8 mb-4 sm:mb-8">
             <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
               <div className="relative flex-shrink-0">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gradient-accent rounded-full flex items-center justify-center text-white text-3xl sm:text-4xl font-bold">
-                  {selectedAvatar || (userInfo?.name
-                    ? userInfo.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                    : "U")}
+                <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gradient-accent rounded-full flex items-center justify-center text-white text-3xl sm:text-4xl font-bold overflow-hidden">
+                  {selectedAvatar ? (
+                    selectedAvatar.startsWith("http") ? (
+                      <img
+                        src={selectedAvatar}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      selectedAvatar
+                    )
+                  ) : userInfo?.name ? (
+                    userInfo.name.charAt(0).toUpperCase()
+                  ) : (
+                    "U"
+                  )}
                 </div>
-                <Suspense fallback={<div className="w-10 h-10 animate-pulse bg-gray-200 rounded-full" />}>
+                <Suspense
+                  fallback={
+                    <div className="w-10 h-10 animate-pulse bg-gray-200 rounded-full" />
+                  }
+                >
                   <AvatarSelector
                     currentAvatar={selectedAvatar}
                     onAvatarSelect={setSelectedAvatar}
@@ -317,13 +354,16 @@ const ProfilePage = () => {
                   <div className="flex items-center justify-center sm:justify-start space-x-2">
                     <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                     <span className="truncate">
-                      Miembro desde {userInfo.created_at ?
-                        new Date(userInfo.created_at).toLocaleDateString('es-ES', {
-                          year: 'numeric',
-                          month: 'long'
-                        }) :
-                        ''
-                      }
+                      Miembro desde{" "}
+                      {userInfo.created_at
+                        ? new Date(userInfo.created_at).toLocaleDateString(
+                            "es-ES",
+                            {
+                              year: "numeric",
+                              month: "long",
+                            },
+                          )
+                        : ""}
                     </span>
                   </div>
                   <div className="flex items-center justify-center sm:justify-start space-x-2">
@@ -332,7 +372,9 @@ const ProfilePage = () => {
                   </div>
                   <div className="flex items-center justify-center sm:justify-start space-x-2">
                     <Trophy className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                    <span className="truncate">{achievements.filter(a => a.earned).length} logros</span>
+                    <span className="truncate">
+                      {achievements.filter((a) => a.earned).length} logros
+                    </span>
                   </div>
                 </div>
               </div>
@@ -342,12 +384,42 @@ const ProfilePage = () => {
           {/* Tabs Content */}
           <Tabs defaultValue="courses" className="space-y-4 sm:space-y-6">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 h-auto">
-              <TabsTrigger value="courses" className="text-xs sm:text-sm px-2 py-2">Mis Cursos</TabsTrigger>
-              <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 py-2">Información</TabsTrigger>
-              <TabsTrigger value="achievements" className="text-xs sm:text-sm px-2 py-2">Logros</TabsTrigger>
-              <TabsTrigger value="certificates" className="text-xs sm:text-sm px-2 py-2">Certificados</TabsTrigger>
-              <TabsTrigger value="subscriptions" className="text-xs sm:text-sm px-2 py-2">Suscripciones</TabsTrigger>
-              <TabsTrigger value="settings" className="text-xs sm:text-sm px-2 py-2">Configuración</TabsTrigger>
+              <TabsTrigger
+                value="courses"
+                className="text-xs sm:text-sm px-2 py-2"
+              >
+                Mis Cursos
+              </TabsTrigger>
+              <TabsTrigger
+                value="profile"
+                className="text-xs sm:text-sm px-2 py-2"
+              >
+                Información
+              </TabsTrigger>
+              <TabsTrigger
+                value="achievements"
+                className="text-xs sm:text-sm px-2 py-2"
+              >
+                Logros
+              </TabsTrigger>
+              <TabsTrigger
+                value="certificates"
+                className="text-xs sm:text-sm px-2 py-2"
+              >
+                Certificados
+              </TabsTrigger>
+              <TabsTrigger
+                value="subscriptions"
+                className="text-xs sm:text-sm px-2 py-2"
+              >
+                Suscripciones
+              </TabsTrigger>
+              <TabsTrigger
+                value="settings"
+                className="text-xs sm:text-sm px-2 py-2"
+              >
+                Configuración
+              </TabsTrigger>
             </TabsList>
 
             {/* Mis Cursos */}
@@ -413,7 +485,9 @@ const ProfilePage = () => {
                         <Button
                           disabled={course.locked}
                           variant={course.isAssigned ? "outline" : "default"}
-                          onClick={() => !course.locked && navigate(`/curso/${course.id}`)}
+                          onClick={() =>
+                            !course.locked && navigate(`/curso/${course.id}`)
+                          }
                           className="w-full sm:w-auto relative z-10"
                         >
                           <Play className="h-4 w-4 mr-2" />
@@ -444,7 +518,6 @@ const ProfilePage = () => {
                     </Card>
                   ))}
                 </div>
-
 
                 <div className="mt-6 text-center">
                   <Button
@@ -537,7 +610,11 @@ const ProfilePage = () => {
                         <Save className="h-4 w-4 mr-2" />
                         Guardar Cambios
                       </Button>
-                      <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
+                      <Button
+                        variant="outline"
+                        onClick={handleCancel}
+                        className="w-full sm:w-auto"
+                      >
                         Cancelar
                       </Button>
                     </div>
@@ -547,7 +624,10 @@ const ProfilePage = () => {
             </TabsContent>
 
             {/* Logros */}
-            <TabsContent value="achievements" className="space-y-4 sm:space-y-6">
+            <TabsContent
+              value="achievements"
+              className="space-y-4 sm:space-y-6"
+            >
               <Card className="p-4 sm:p-6">
                 <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 flex items-center">
                   <Trophy className="h-5 w-5 mr-2" />
@@ -591,14 +671,23 @@ const ProfilePage = () => {
             </TabsContent>
 
             {/* Certificados */}
-            <TabsContent value="certificates" className="space-y-4 sm:space-y-6">
+            <TabsContent
+              value="certificates"
+              className="space-y-4 sm:space-y-6"
+            >
               <Card className="p-4 sm:p-6">
                 <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 flex items-center">
                   <Award className="h-5 w-5 mr-2" />
                   Mis Certificados ({certificates.length})
                 </h2>
 
-                <Suspense fallback={<div className="p-10 text-center">Cargando generador de certificados...</div>}>
+                <Suspense
+                  fallback={
+                    <div className="p-10 text-center">
+                      Cargando generador de certificados...
+                    </div>
+                  }
+                >
                   <CertificatesList
                     certificates={certificates}
                     isLoading={loadingCertificates}
@@ -608,7 +697,10 @@ const ProfilePage = () => {
             </TabsContent>
 
             {/* Suscripciones */}
-            <TabsContent value="subscriptions" className="space-y-4 sm:space-y-6">
+            <TabsContent
+              value="subscriptions"
+              className="space-y-4 sm:space-y-6"
+            >
               <Card className="p-4 sm:p-6">
                 <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 flex items-center">
                   <Crown className="h-5 w-5 mr-2" />
@@ -617,87 +709,114 @@ const ProfilePage = () => {
 
                 {(() => {
                   const now = new Date();
-                  const activeSubs = subscriptions.filter(sub => sub.status === true);
-                  const cancelledButActiveSubs = subscriptions.filter(sub => 
-                    sub.status === false && sub.end_time && new Date(sub.end_time) > now
+                  const activeSubs = subscriptions.filter(
+                    (sub) => sub.status === true,
                   );
-                  const allValidSubs = [...activeSubs, ...cancelledButActiveSubs];
+                  const cancelledButActiveSubs = subscriptions.filter(
+                    (sub) =>
+                      sub.status === false &&
+                      sub.end_time &&
+                      new Date(sub.end_time) > now,
+                  );
+                  const allValidSubs = [
+                    ...activeSubs,
+                    ...cancelledButActiveSubs,
+                  ];
 
                   return allValidSubs.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Crown className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No tienes suscripciones activas</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Suscríbete para acceder a contenido premium ilimitado
-                    </p>
-                    <Button onClick={() => navigate("/suscripciones")}>
-                      Ver Planes de Suscripción
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {allValidSubs.map((subscription) => (
-                      <Card
-                        key={subscription.id}
-                        className={`p-4 sm:p-6 border-primary/20 ${
-                          subscription.status === false ? 'bg-orange-50 border-orange-200' : 'bg-gradient-card'
-                        }`}
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-primary">
-                              Suscripción Premium
-                            </h3>
-                            <div className="flex flex-wrap items-center gap-2 mt-2">
-                              {subscription.status === true ? (
-                                <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                                  Activa
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20">
-                                  Cancelada - Acceso hasta {new Date(subscription.end_time!).toLocaleDateString('es-ES')}
-                                </Badge>
-                              )}
+                    <div className="text-center py-8">
+                      <Crown className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">
+                        No tienes suscripciones activas
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Suscríbete para acceder a contenido premium ilimitado
+                      </p>
+                      <Button onClick={() => navigate("/suscripciones")}>
+                        Ver Planes de Suscripción
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {allValidSubs.map((subscription) => (
+                        <Card
+                          key={subscription.id}
+                          className={`p-4 sm:p-6 border-primary/20 ${
+                            subscription.status === false
+                              ? "bg-orange-50 border-orange-200"
+                              : "bg-gradient-card"
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-semibold text-primary">
+                                Suscripción Premium
+                              </h3>
+                              <div className="flex flex-wrap items-center gap-2 mt-2">
+                                {subscription.status === true ? (
+                                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                                    Activa
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                                    Cancelada - Acceso hasta{" "}
+                                    {new Date(
+                                      subscription.end_time!,
+                                    ).toLocaleDateString("es-ES")}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
+                            {subscription.status === true && (
+                              <Button
+                                variant="destructive"
+                                onClick={() =>
+                                  handleCancelSubscription(subscription.id)
+                                }
+                                className="w-full sm:w-auto"
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                Cancelar Suscripción
+                              </Button>
+                            )}
                           </div>
-                          {subscription.status === true && (
-                            <Button
-                              variant="destructive"
-                              onClick={() => handleCancelSubscription(subscription.id)}
-                              className="w-full sm:w-auto"
-                            >
-                              <X className="h-4 w-4 mr-2" />
-                              Cancelar Suscripción
-                            </Button>
-                          )}
-                        </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Fecha de inicio:</span>
-                            <p className="font-medium">
-                              {new Date(subscription.start_time).toLocaleDateString('es-ES')}
-                            </p>
-                          </div>
-                          {subscription.end_time && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                             <div>
-                              <span className="text-muted-foreground">Fecha de fin:</span>
+                              <span className="text-muted-foreground">
+                                Fecha de inicio:
+                              </span>
                               <p className="font-medium">
-                                {new Date(subscription.end_time).toLocaleDateString('es-ES')}
+                                {new Date(
+                                  subscription.start_time,
+                                ).toLocaleDateString("es-ES")}
                               </p>
                             </div>
-                          )}
-                          <div>
-                            <span className="text-muted-foreground">ID de PayPal:</span>
-                            <p className="font-medium font-mono text-xs">
-                              {subscription.paypal_subscription_id}
-                            </p>
+                            {subscription.end_time && (
+                              <div>
+                                <span className="text-muted-foreground">
+                                  Fecha de fin:
+                                </span>
+                                <p className="font-medium">
+                                  {new Date(
+                                    subscription.end_time,
+                                  ).toLocaleDateString("es-ES")}
+                                </p>
+                              </div>
+                            )}
+                            <div>
+                              <span className="text-muted-foreground">
+                                ID de PayPal:
+                              </span>
+                              <p className="font-medium font-mono text-xs">
+                                {subscription.paypal_subscription_id}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                );
+                        </Card>
+                      ))}
+                    </div>
+                  );
                 })()}
               </Card>
             </TabsContent>
@@ -732,7 +851,7 @@ const ProfilePage = () => {
                           onCheckedChange={(value) =>
                             handleNotificationChange(
                               "emailNotifications",
-                              value
+                              value,
                             )
                           }
                         />
@@ -801,7 +920,11 @@ const ProfilePage = () => {
                       Cerrar Sesión
                     </h3>
                     <div className="space-y-4">
-                      <Button onClick={logout} variant="destructive" className="w-full">
+                      <Button
+                        onClick={logout}
+                        variant="destructive"
+                        className="w-full"
+                      >
                         <LogOut className="h-4 w-4 mr-2" />
                         Cerrar Sesión
                       </Button>

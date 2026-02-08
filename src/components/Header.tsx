@@ -36,7 +36,7 @@ const Header = memo(() => {
         const now = new Date();
 
         // Find the most recent subscription (active or cancelled but not expired)
-        const validSubscription = subscriptions.find(sub => {
+        const validSubscription = subscriptions.find((sub) => {
           const endDate = new Date(sub.end_time);
           return sub.status === true || (sub.status === false && endDate > now);
         });
@@ -46,10 +46,13 @@ const Header = memo(() => {
           setSubscriptionStatus({
             hasValidSubscription: true,
             isActive: validSubscription.status === true,
-            endDate: endDate
+            endDate: endDate,
           });
         } else {
-          setSubscriptionStatus({ hasValidSubscription: false, isActive: false });
+          setSubscriptionStatus({
+            hasValidSubscription: false,
+            isActive: false,
+          });
         }
       } catch (error) {
         setSubscriptionStatus({ hasValidSubscription: false, isActive: false });
@@ -59,14 +62,9 @@ const Header = memo(() => {
     loadSubscriptionStatus();
   }, [user]);
 
-  const avatarLetters =
-    (user as any)?.avatar ||
-    user?.name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase() ||
-    "U";
+  const avatarSrc = (user as any)?.profile_image_url || (user as any)?.avatar;
+  const isUrl = avatarSrc?.startsWith("http");
+  const avatarLetter = user?.name?.charAt(0).toUpperCase() || "U";
 
   const HeaderSkeleton = () => (
     <div className="flex items-center space-x-4">
@@ -87,24 +85,36 @@ const Header = memo(() => {
                 <button
                   onClick={async () => {
                     if (!user?.email) return;
-                    setResendState('sending');
+                    setResendState("sending");
                     setResendMessage(null);
                     try {
                       const res = await sendEmail(user.email);
                       if (!res.ok) throw new Error(await res.text());
-                      setResendState('sent');
-                      setResendMessage('Correo de verificación enviado. Revisa tu bandeja.');
+                      setResendState("sent");
+                      setResendMessage(
+                        "Correo de verificación enviado. Revisa tu bandeja.",
+                      );
                     } catch (err) {
-                      setResendState('error');
-                      setResendMessage('Error al enviar el correo. Intenta de nuevo más tarde.');
+                      setResendState("error");
+                      setResendMessage(
+                        "Error al enviar el correo. Intenta de nuevo más tarde.",
+                      );
                     }
                   }}
                   className="inline-flex items-center px-2 py-1 rounded bg-yellow-600 text-white text-xs hover:bg-yellow-700 transition"
-                  disabled={resendState === 'sending'}
+                  disabled={resendState === "sending"}
                 >
-                  {resendState === 'sending' ? 'Enviando...' : resendState === 'sent' ? 'Enviado' : 'Reenviar'}
+                  {resendState === "sending"
+                    ? "Enviando..."
+                    : resendState === "sent"
+                      ? "Enviado"
+                      : "Reenviar"}
                 </button>
-                {resendMessage && <span className="text-xs text-yellow-800 ml-2">{resendMessage}</span>}
+                {resendMessage && (
+                  <span className="text-xs text-yellow-800 ml-2">
+                    {resendMessage}
+                  </span>
+                )}
               </div>
               <button
                 aria-label="Cerrar aviso de verificación"
@@ -119,161 +129,271 @@ const Header = memo(() => {
       )}
 
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-        <div className="flex items-center space-x-3 cursor-pointer"  onClick={() => navigate('/')}>
-          <img 
-            src={valenatoLogo} 
-            alt="Vallenato Academy" 
+        <div
+          className="flex items-center space-x-3 cursor-pointer"
+          onClick={() => navigate("/")}
+        >
+          <img
+            src={valenatoLogo}
+            alt="Vallenato Academy"
             className="h-12 w-12 rounded-full object-cover shadow-warm animate-glow"
           />
           <div>
-            <h1 className="text-xl font-bold text-primary">Academia Vallenato</h1>
-            <p className="text-sm text-muted-foreground">Maestro del Acordeón</p>
+            <h1 className="text-xl font-bold text-primary">
+              Academia Vallenato
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Maestro del Acordeón
+            </p>
           </div>
         </div>
-        
+
         <nav className="hidden md:flex items-center space-x-8">
-          <a href="/#inicio" className="text-foreground hover:text-primary transition-smooth">
+          <a
+            href="/#inicio"
+            className="text-foreground hover:text-primary transition-smooth"
+          >
             Inicio
           </a>
-          <a href="/#biografia" className="text-foreground hover:text-primary transition-smooth">
+          <a
+            href="/#biografia"
+            className="text-foreground hover:text-primary transition-smooth"
+          >
             Biografía
           </a>
-          <a href="/cursos" className="text-foreground hover:text-primary transition-smooth">
+          <a
+            href="/cursos"
+            className="text-foreground hover:text-primary transition-smooth"
+          >
             Cursos
           </a>
-          <a href="/suscripciones" className="text-foreground hover:text-primary transition-smooth">
+          <a
+            href="/suscripciones"
+            className="text-foreground hover:text-primary transition-smooth"
+          >
             Suscripciones
           </a>
           {/* <a href="#videos" className="text-foreground hover:text-primary transition-smooth">
             Videos
           </a> */}
-          <a href="/contacto" className="text-foreground hover:text-primary transition-smooth">
+          <a
+            href="/contacto"
+            className="text-foreground hover:text-primary transition-smooth"
+          >
             Contacto
           </a>
         </nav>
 
-      {/* Botón menú móvil */}
-      <div className="flex items-center md:hidden">
-        <button
-          aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
-          onClick={() => setMobileOpen((s) => !s)}
-          className="p-2 rounded-md hover:bg-muted/20 transition"
-        >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
-      </div>
-      
-      <div className="hidden md:flex items-center space-x-4">
-        {loading ? (
-          <HeaderSkeleton />
-        ) : user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="lg" className="flex items-center space-x-2 p-2">
-                <div className="w-8 h-8 bg-gradient-accent rounded-full flex items-center justify-center text-white text-lg font-bold">
-                  {avatarLetters}
-                </div>
-                {subscriptionStatus.hasValidSubscription && (
-                  <div className="flex items-center space-x-1 ml-1">
-                    <Crown className="h-4 w-4 text-yellow-500" />
-                    <Badge variant={subscriptionStatus.isActive ? "default" : "secondary"} className="text-xs">
-                      {subscriptionStatus.isActive ? "Activa" : "Cancelada"}
-                    </Badge>
+        {/* Botón menú móvil */}
+        <div className="flex items-center md:hidden">
+          <button
+            aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+            onClick={() => setMobileOpen((s) => !s)}
+            className="p-2 rounded-md hover:bg-muted/20 transition"
+          >
+            {mobileOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </button>
+        </div>
+
+        <div className="hidden md:flex items-center space-x-4">
+          {loading ? (
+            <HeaderSkeleton />
+          ) : user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="flex items-center space-x-2 p-2"
+                >
+                  <div className="w-8 h-8 bg-gradient-accent rounded-full flex items-center justify-center text-white text-lg font-bold overflow-hidden">
+                    {isUrl ? (
+                      <img
+                        src={avatarSrc}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      avatarSrc || avatarLetter
+                    )}
                   </div>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigate('/perfil')}>
-                <User className="h-4 w-4 mr-2" />
-                Mi Perfil
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/mis-cursos')}>
-                <Music className="h-4 w-4 mr-2" />
-                Mis Cursos
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/mis-logros')}>
-                <Music className="h-4 w-4 mr-2" />
-                Mis Logros
-              </DropdownMenuItem>
-              {isAdmin && (
-                <DropdownMenuItem onClick={() => navigate('/admin')}>
+                  {subscriptionStatus.hasValidSubscription && (
+                    <div className="flex items-center space-x-1 ml-1">
+                      <Crown className="h-4 w-4 text-yellow-500" />
+                      <Badge
+                        variant={
+                          subscriptionStatus.isActive ? "default" : "secondary"
+                        }
+                        className="text-xs"
+                      >
+                        {subscriptionStatus.isActive ? "Activa" : "Cancelada"}
+                      </Badge>
+                    </div>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate("/perfil")}>
                   <User className="h-4 w-4 mr-2" />
-                  Admin Panel
+                  Mi Perfil
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={logout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Cerrar Sesión
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <AuthDialog onLogin={(u) => { login(u)}}>
-            <Button variant="hero" size="lg" className="flex items-center space-x-2">
-              <User className="h-4 w-4" />
-              <span>Iniciar Sesión</span>
-            </Button>
-          </AuthDialog>
-        )}
+                <DropdownMenuItem onClick={() => navigate("/mis-cursos")}>
+                  <Music className="h-4 w-4 mr-2" />
+                  Mis Cursos
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/mis-logros")}>
+                  <Music className="h-4 w-4 mr-2" />
+                  Mis Logros
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem onClick={() => navigate("/admin")}>
+                    <User className="h-4 w-4 mr-2" />
+                    Admin Panel
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={logout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Cerrar Sesión
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <AuthDialog
+              onLogin={(u) => {
+                login(u);
+              }}
+            >
+              <Button
+                variant="hero"
+                size="lg"
+                className="flex items-center space-x-2"
+              >
+                <User className="h-4 w-4" />
+                <span>Iniciar Sesión</span>
+              </Button>
+            </AuthDialog>
+          )}
+        </div>
       </div>
-    </div>
 
       {/* Panel menú móvil */}
       {mobileOpen && (
         <div className="fixed top-20 left-0 w-full h-[calc(100%-5rem)] bg-white dark:bg-slate-900 z-50 md:hidden shadow-xl">
           <div className="px-6 py-6 space-y-6">
             <nav className="flex flex-col space-y-4">
-              <a href="/#inicio" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
+              <a
+                href="/#inicio"
+                onClick={() => setMobileOpen(false)}
+                className="text-lg font-medium text-foreground hover:text-primary"
+              >
                 Inicio
               </a>
-              <a href="/#biografia" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
+              <a
+                href="/#biografia"
+                onClick={() => setMobileOpen(false)}
+                className="text-lg font-medium text-foreground hover:text-primary"
+              >
                 Biografía
               </a>
-              <button onClick={() => { navigate('/cursos'); setMobileOpen(false); }} className="text-left text-lg font-medium text-foreground hover:text-primary">
+              <button
+                onClick={() => {
+                  navigate("/cursos");
+                  setMobileOpen(false);
+                }}
+                className="text-left text-lg font-medium text-foreground hover:text-primary"
+              >
                 Cursos
               </button>
-              <button onClick={() => { navigate('/suscripciones'); setMobileOpen(false); }} className="text-left text-lg font-medium text-foreground hover:text-primary">
+              <button
+                onClick={() => {
+                  navigate("/suscripciones");
+                  setMobileOpen(false);
+                }}
+                className="text-left text-lg font-medium text-foreground hover:text-primary"
+              >
                 Suscripciones
               </button>
-              <a href="/contacto" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-foreground hover:text-primary">
+              <a
+                href="/contacto"
+                onClick={() => setMobileOpen(false)}
+                className="text-lg font-medium text-foreground hover:text-primary"
+              >
                 Contacto
               </a>
             </nav>
 
             <div className="pt-4 border-t border-border">
               {loading ? (
-                  <div className="space-y-3">
-                    <div className="h-5 w-40 bg-muted/40 rounded animate-pulse" />
-                    <div className="h-5 w-32 bg-muted/40 rounded animate-pulse" />
-                  </div>
-                ) : user ? (
+                <div className="space-y-3">
+                  <div className="h-5 w-40 bg-muted/40 rounded animate-pulse" />
+                  <div className="h-5 w-32 bg-muted/40 rounded animate-pulse" />
+                </div>
+              ) : user ? (
                 <div className="flex flex-col space-y-3">
-                  <button onClick={() => { navigate('/perfil'); setMobileOpen(false); }} className="flex items-center space-x-2">
+                  <button
+                    onClick={() => {
+                      navigate("/perfil");
+                      setMobileOpen(false);
+                    }}
+                    className="flex items-center space-x-2"
+                  >
                     <User className="h-5 w-5" />
                     <span>Mi Perfil</span>
                   </button>
-                  <button onClick={() => { navigate('/mis-cursos'); setMobileOpen(false); }} className="flex items-center space-x-2">
+                  <button
+                    onClick={() => {
+                      navigate("/mis-cursos");
+                      setMobileOpen(false);
+                    }}
+                    className="flex items-center space-x-2"
+                  >
                     <Music className="h-5 w-5" />
                     <span>Mis Cursos</span>
                   </button>
-                  <button onClick={() => { navigate('/mis-logros'); setMobileOpen(false); }} className="flex items-center space-x-2">
+                  <button
+                    onClick={() => {
+                      navigate("/mis-logros");
+                      setMobileOpen(false);
+                    }}
+                    className="flex items-center space-x-2"
+                  >
                     <Music className="h-5 w-5" />
                     <span>Mis Logros</span>
                   </button>
                   {isAdmin && (
-                   <button onClick={() => { navigate('/admin'); setMobileOpen(false); }} className="flex items-center space-x-2">
-                     <User className="h-5 w-5" />
-                     <span>Admin Panel</span>
-                   </button>
-                 )}
-                  <button onClick={() => { logout(); setMobileOpen(false); }} className="flex items-center space-x-2">
+                    <button
+                      onClick={() => {
+                        navigate("/admin");
+                        setMobileOpen(false);
+                      }}
+                      className="flex items-center space-x-2"
+                    >
+                      <User className="h-5 w-5" />
+                      <span>Admin Panel</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      logout();
+                      setMobileOpen(false);
+                    }}
+                    className="flex items-center space-x-2"
+                  >
                     <LogOut className="h-5 w-5" />
                     <span>Cerrar Sesión</span>
                   </button>
                 </div>
               ) : (
-                <AuthDialog onLogin={(u) => { login(u); setMobileOpen(false); }}>
+                <AuthDialog
+                  onLogin={(u) => {
+                    login(u);
+                    setMobileOpen(false);
+                  }}
+                >
                   <Button variant="hero" className="w-full">
                     Iniciar Sesión
                   </Button>
@@ -287,6 +407,6 @@ const Header = memo(() => {
   );
 });
 
-Header.displayName = 'Header';
+Header.displayName = "Header";
 
 export default Header;
