@@ -97,21 +97,6 @@ export async function getCourseDetails(
   };
 }
 
-export async function getCoursesPageData() {
-  const res = await fetch(`${API_URL}/courses/courses-page`, {
-    method: "GET",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Error al cargar la página de cursos");
-  }
-
-  return res.json();
-}
-
 export async function getCourseDetails_preview(
   courseId: string,
 ): Promise<CourseDetails> {

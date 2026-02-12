@@ -180,7 +180,7 @@ export async function getQuizAttemptDetails(
  * Obtiene los certificados del usuario
  */
 export async function getUserCertificates(): Promise<Certificate[]> {
-  const res = await fetch(`${API_URL}/api/certificates`, {
+  const res = await fetch(`${API_URL}/api/certificates/get`, {
     method: "GET",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

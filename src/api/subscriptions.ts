@@ -162,7 +162,7 @@ export async function getAchievements(): Promise<UserAchievement[]> {
 }
 
 export async function createAchievement(achievement: Omit<UserAchievement, 'id' | 'created_at'>): Promise<UserAchievement> {
-  const res = await fetch(`${API_URL}/api/achievements`, {
+  const res = await fetch(`${API_URL}/api/achievements/create`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
