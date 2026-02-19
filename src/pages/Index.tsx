@@ -1,6 +1,7 @@
 import LazyHeader from "@/components/LazyHeader";
 import Hero from "@/components/Hero";
 import Biography from "@/components/Biography";
+import PhotoCarousel from "@/components/PhotoCarousel";
 import Courses from "@/components/Courses";
 import Footer from "@/components/Footer";
 
@@ -10,6 +11,7 @@ const Index = () => {
       <LazyHeader />
       <Hero />
       <Biography />
+      <PhotoCarousel />
       <Courses />
       <Footer />
     </div>

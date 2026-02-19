@@ -1,117 +1,108 @@
-import { Award, Music2, Heart, Trophy } from "lucide-react";
+import { Award, Music2, Heart } from "lucide-react";
 import { Card } from "./ui/card";
 
 const Biography = () => {
   return (
-    <section id="biografia" className="py-20 bg-gradient-to-b from-background to-vallenato-cream/10">
+    <section
+      id="biografia"
+      className="py-24 lg:py-32 bg-gradient-to-b from-background via-vallenato-cream/5 to-background"
+    >
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-bold mb-4">
-            <span className="text-primary">Andrea Paola</span>{" "}
+        <div className="text-center mb-16 lg:mb-24 max-w-4xl mx-auto pt-24 lg:pt-0">
+          <h2 className="text-4xl sm:text-5xl lg:text-7xl font-bold mb-6 lg:mb-8 tracking-tight">
+            <span className="text-primary drop-shadow-sm">Andrea Paola</span>{" "}
             <span className="bg-gradient-accent bg-clip-text text-transparent">
               Argote Chávez
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Maestra en Música con énfasis en Ingeniería de Sonido de la Pontificia Universidad Javeriana. 
-            Acordeonista profesional, compositora, gestora cultural y embajadora del vallenato colombiano.
+          <p className="text-lg lg:text-2xl text-muted-foreground leading-relaxed font-light">
+            Maestra en Música con énfasis en Ingeniería de Sonido. Acordeonista
+            profesional y embajadora de la cultura vallenata.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8">
-            <Card className="bg-gradient-card p-8 shadow-elegant border-primary/20">
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
-                  <Music2 className="h-12 w-12 text-primary" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 lg:gap-16 items-start max-w-7xl mx-auto">
+          <div className="space-y-8 lg:space-y-12">
+            <div className="group transition-all duration-300">
+              <div className="flex items-start space-x-4 lg:space-x-6">
+                <div className="flex-shrink-0 p-3 lg:p-4 bg-primary/5 rounded-2xl group-hover:bg-primary/10 transition-colors">
+                  <Music2 className="h-8 w-8 lg:h-10 lg:w-10 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-semibold text-primary mb-4">Formación Académica</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Se graduó como Maestra en Música con énfasis en Ingeniería de Sonido de la 
-                    Pontificia Universidad Javeriana en Bogotá (2019). Combina formación integral 
-                    en teoría musical, análisis e interpretación con competencias técnicas en 
-                    acústica, producción audiovisual y diseño de aplicaciones en software y hardware. 
-                    Habla español nativamente e inglés nivel B1.
+                  <h3 className="text-xl lg:text-2xl font-bold text-primary mb-2 lg:mb-4">
+                    Formación Académica
+                  </h3>
+                  <p className="text-base lg:text-lg text-muted-foreground leading-relaxed">
+                    Maestra en Música con énfasis en Ingeniería de Sonido de la
+                    Pontificia Universidad Javeriana. Certificada por{" "}
+                    <strong>EMMAT Berklee</strong> en Grabación de Música y
+                    Sonido, y por la{" "}
+                    <strong>Fundación Universitaria del Área Andina</strong> en
+                    Pedagogía Docencia.
                   </p>
                 </div>
               </div>
-            </Card>
-
-            <Card className="bg-gradient-card p-8 shadow-elegant border-primary/20">
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
-                  <Award className="h-12 w-12 text-vallenato-red" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-semibold text-primary mb-4">Trayectoria Artística</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Participó a los 13 años en la categoría infantil del 42° Festival de la Leyenda 
-                    Vallenata. Nuevamente compitió en categoría juvenil bajo la instrucción del Maestro 
-                    Navín López. Reconocida como Embajadora Cultural de Colombia en Puerto Rico por el 
-                    Centro Cultural Colombiano durante el VI Festival de la Independencia de Colombia. 
-                    En 2021, recibió reconocimiento de la Alcaldía de Agustín Codazzi por su aporte como 
-                    gestora cultural y autora en la música vallenata.
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="bg-gradient-card p-8 shadow-elegant border-primary/20">
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
-                  <Heart className="h-12 w-12 text-vallenato-gold" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-semibold text-primary mb-4">Experiencia Profesional</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Ha trabajado en producción audiovisual e ingeniería de sonido a través de Estudios 
-                    Music Record (2019-2020) realizando talleres en producción, audio digital y sonido 
-                    en vivo. Se ha desempeñado como asistente de grabación en el Estudio CH de Carlos 
-                    Huertas y como acordeonista profesional en Gaira Café. Domina grabación, mezcla, 
-                    composición, arreglos y dirección de agrupaciones instrumentales y vocales.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-hero rounded-2xl transform -rotate-3 animate-float"></div>
-              <Card className="relative bg-card p-8 rounded-2xl shadow-elegant">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="text-center">
-                    <Trophy className="h-8 w-8 text-primary mx-auto mb-3" />
-                    <div className="text-3xl font-bold text-primary">20+</div>
-                    <div className="text-sm text-muted-foreground">Reconocimientos</div>
-                  </div>
-                  <div className="text-center">
-                    <Award className="h-8 w-8 text-vallenato-red mx-auto mb-3" />
-                    <div className="text-3xl font-bold text-primary">1000+</div>
-                    <div className="text-sm text-muted-foreground">Estudiantes Entrenados</div>
-                  </div>
-                  <div className="text-center">
-                    <Music2 className="h-8 w-8 text-vallenato-gold mx-auto mb-3" />
-                    <div className="text-3xl font-bold text-primary">20</div>
-                    <div className="text-sm text-muted-foreground">Años de Docencia</div>
-                  </div>
-                  <div className="text-center">
-                    <Heart className="h-8 w-8 text-accent mx-auto mb-3" />
-                    <div className="text-3xl font-bold text-primary">3</div>
-                    <div className="text-sm text-muted-foreground">Continentes Alcanzados</div>
-                  </div>
-                </div>
-              </Card>
             </div>
 
-            <Card className="bg-gradient-accent text-white p-8 shadow-elegant">
-              <blockquote className="text-lg italic leading-relaxed">
-                "El acordeón es el corazón del vallenato. No enseño solo notas, enseño a mis 
-                estudiantes a contar historias a través de la música, a conectar con sus emociones 
-                y con la cultura que nos define."
-              </blockquote>
-              <footer className="mt-4 font-semibold">— Andrea Maestra de Acordeón</footer>
+            <div className="group transition-all duration-300">
+              <div className="flex items-start space-x-4 lg:space-x-6">
+                <div className="flex-shrink-0 p-3 lg:p-4 bg-vallenato-red/5 rounded-2xl group-hover:bg-vallenato-red/10 transition-colors">
+                  <Award className="h-8 w-8 lg:h-10 lg:w-10 text-vallenato-red" />
+                </div>
+                <div>
+                  <h3 className="text-xl lg:text-2xl font-bold text-primary mb-2 lg:mb-4">
+                    Trayectoria Artística
+                  </h3>
+                  <p className="text-base lg:text-lg text-muted-foreground leading-relaxed">
+                    Desde los 13 años en el Festival de la Leyenda Vallenata.
+                    Reconocida como Embajadora Cultural de Colombia y premiada
+                    por su aporte como gestora cultural y autora en la música
+                    vallenata.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="group transition-all duration-300">
+              <div className="flex items-start space-x-4 lg:space-x-6">
+                <div className="flex-shrink-0 p-3 lg:p-4 bg-vallenato-gold/5 rounded-2xl group-hover:bg-vallenato-gold/10 transition-colors">
+                  <Heart className="h-8 w-8 lg:h-10 lg:w-10 text-vallenato-gold" />
+                </div>
+                <div>
+                  <h3 className="text-xl lg:text-2xl font-bold text-primary mb-2 lg:mb-4">
+                    Experiencia Profesional
+                  </h3>
+                  <p className="text-base lg:text-lg text-muted-foreground leading-relaxed">
+                    Ingeniera de sonido y acordeonista profesional en escenarios
+                    icónicos como Gaira Café. Domina la grabación, mezcla y
+                    dirección de agrupaciones instrumentales y vocales.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="md:sticky md:top-24">
+            <Card className="bg-gradient-to-br from-primary/95 to-vallenato-red/95 text-white p-8 lg:p-12 shadow-2xl rounded-[1.5rem] lg:rounded-[2rem] border-none overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-24 h-24 lg:w-32 lg:h-32 bg-white/10 rounded-full -mr-12 -mt-12 blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 lg:w-32 lg:h-32 bg-black/10 rounded-full -ml-12 -mb-12 blur-3xl"></div>
+
+              <div className="relative space-y-6 lg:space-y-8">
+                <Music2 className="h-10 w-10 lg:h-12 lg:w-12 text-white/40" />
+                <blockquote className="text-xl lg:text-3xl italic leading-relaxed font-medium">
+                  "El acordeón es el corazón del vallenato. No enseño solo
+                  notas, enseño a mis estudiantes a contar historias a través de
+                  la música."
+                </blockquote>
+                <div className="pt-6 border-t border-white/20">
+                  <footer className="font-bold text-lg lg:text-xl text-white">
+                    Andrea Paola Argote
+                  </footer>
+                  <p className="text-white/70 text-xs lg:text-sm mt-1 uppercase tracking-widest font-semibold">
+                    Maestra de Acordeón
+                  </p>
+                </div>
+              </div>
             </Card>
           </div>
         </div>

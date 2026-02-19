@@ -3,7 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Music, User, LogOut, Menu, X, Crown } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import AuthDialog from "./AuthDialog";
 import valenatoLogo from "@/assets/vallenato-logo.webp";
 import { useAuth } from "@/context/AuthContext";
@@ -13,9 +18,13 @@ import { getUserSubscriptions } from "@/api/subscriptions";
 const Header = memo(() => {
   const navigate = useNavigate();
   const { user, login, logout, loading } = useAuth();
-  const isAdmin = Boolean(user && (user.role === "admin" || (user as any).isAdmin));
+  const isAdmin = Boolean(
+    user && (user.role === "admin" || (user as any).isAdmin),
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [resendState, setResendState] = useState<
+    "idle" | "sending" | "sent" | "error"
+  >("idle");
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [bannerVisible, setBannerVisible] = useState(true);
   const [subscriptionStatus, setSubscriptionStatus] = useState<{
@@ -130,62 +139,59 @@ const Header = memo(() => {
 
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         <div
-          className="flex items-center space-x-3 cursor-pointer"
+          className="flex items-center space-x-2 sm:space-x-3 cursor-pointer"
           onClick={() => navigate("/")}
         >
           <img
             src={valenatoLogo}
             alt="Vallenato Academy"
-            className="h-12 w-12 rounded-full object-cover shadow-warm animate-glow"
+            className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover shadow-warm animate-glow"
           />
-          <div>
-            <h1 className="text-xl font-bold text-primary">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-primary truncate">
               Academia Vallenato
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
               Maestro del Acordeón
             </p>
           </div>
         </div>
 
-        <nav className="hidden md:flex items-center space-x-8">
+        <nav className="hidden xl:flex items-center space-x-4 xl:space-x-8">
           <a
             href="/#inicio"
-            className="text-foreground hover:text-primary transition-smooth"
+            className="text-foreground hover:text-primary transition-smooth text-sm xl:text-base"
           >
             Inicio
           </a>
           <a
             href="/#biografia"
-            className="text-foreground hover:text-primary transition-smooth"
+            className="text-foreground hover:text-primary transition-smooth text-sm xl:text-base"
           >
             Biografía
           </a>
           <a
             href="/cursos"
-            className="text-foreground hover:text-primary transition-smooth"
+            className="text-foreground hover:text-primary transition-smooth text-sm xl:text-base"
           >
             Cursos
           </a>
           <a
             href="/suscripciones"
-            className="text-foreground hover:text-primary transition-smooth"
+            className="text-foreground hover:text-primary transition-smooth text-sm xl:text-base"
           >
             Suscripciones
           </a>
-          {/* <a href="#videos" className="text-foreground hover:text-primary transition-smooth">
-            Videos
-          </a> */}
           <a
             href="/contacto"
-            className="text-foreground hover:text-primary transition-smooth"
+            className="text-foreground hover:text-primary transition-smooth text-sm xl:text-base"
           >
             Contacto
           </a>
         </nav>
 
         {/* Botón menú móvil */}
-        <div className="flex items-center md:hidden">
+        <div className="flex items-center xl:hidden">
           <button
             aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
             onClick={() => setMobileOpen((s) => !s)}
@@ -199,7 +205,7 @@ const Header = memo(() => {
           </button>
         </div>
 
-        <div className="hidden md:flex items-center space-x-4">
+        <div className="hidden xl:flex items-center space-x-3 ml-4 xl:ml-8">
           {loading ? (
             <HeaderSkeleton />
           ) : user ? (
@@ -282,7 +288,7 @@ const Header = memo(() => {
 
       {/* Panel menú móvil */}
       {mobileOpen && (
-        <div className="fixed top-20 left-0 w-full h-[calc(100%-5rem)] bg-white dark:bg-slate-900 z-50 md:hidden shadow-xl">
+        <div className="fixed top-20 left-0 w-full h-[calc(100%-5rem)] bg-white dark:bg-slate-900 z-50 xl:hidden shadow-xl">
           <div className="px-6 py-6 space-y-6">
             <nav className="flex flex-col space-y-4">
               <a

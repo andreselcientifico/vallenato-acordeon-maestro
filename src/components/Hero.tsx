@@ -1,94 +1,62 @@
+import { Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, memo } from "react";
-import { Play, Star, Users } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import heroBackground from "@/assets/hero-background.webp";
-import { fetchCourses_API } from "@/api/admin";
 
-/**
- * HERO optimizado para Lighthouse:
- * - Se reemplaza el background-image por un <img> real para permitir prioridad de carga.
- * - La imagen ahora puede usar fetchpriority="high" y loading="eager".
- * - Esto mejora drásticamente el Largest Contentful Paint (LCP).
- */
-const Hero = memo(() => {
+const Hero = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    totalStudents: 0,
-    totalCourses: 0,
-  });
-
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const courses = await fetchCourses_API();
-        const totalStudents = courses.reduce((sum: number, course: any) => sum + (course.students || 0), 0);
-        const totalCourses = courses.length;
-        
-        setStats({
-          totalStudents,
-          totalCourses,
-        });
-      } catch (error) {
-        console.warn("Error loading stats:", error);
-        // Mantener valores por defecto si falla la carga
-      }
-    };
-
-    loadStats();
-  }, []);
 
   return (
     <section
       id="inicio"
-      className="relative min-h-[calc(100vh-5rem)] flex items-start lg:items-center justify-center px-4 pt-20 pb-20 overflow-hidden"
+      className="relative min-h-[calc(100vh-4rem)] flex items-start xl:items-center justify-center px-4 pt-20 pb-20 overflow-hidden"
     >
       {/** Imagen REAL para el fondo del Hero (LCP) */}
       <img
         src={heroBackground}
         alt="Fondo musical vallenato"
         className="absolute inset-0 w-full h-full object-cover"
-        loading="eager"          // Cárgala inmediatamente
+        loading="eager"
       />
 
-      {/** Overlay para legibilidad */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent dark:from-black/70"></div>
+      {/** Overlay para legibilidad mejorada */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent dark:from-black/80"></div>
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start lg:items-center max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 items-start xl:items-center max-w-7xl mx-auto">
           {/** CONTENIDO PRINCIPAL */}
-          <div className="space-y-8 max-w-xl">
-            <div className="space-y-4">
-              <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-bold leading-tight">
+          <div className="space-y-6 sm:space-y-8 max-w-xl pt-12 xl:pt-0 text-center xl:text-left mx-auto xl:mx-0">
+            <div className="space-y-4 sm:space-y-6">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight text-white drop-shadow-[0_5px_15px_rgba(0,0,0,0.6)]">
                 <span className="text-primary">Maestro</span>{" "}
                 <span className="bg-gradient-hero bg-clip-text text-transparent">
                   del Acordeón
                 </span>
               </h1>
 
-              <p className="text-sm sm:text-base md:text-xl lg:text-2xl text-muted-foreground max-w-lg">
-                Aprende vallenato auténtico con más de 20 años de experiencia
-                enseñando el corazón de la música colombiana.
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 font-medium max-w-lg drop-shadow-md leading-relaxed mx-auto xl:mx-0">
+                Aprende vallenato auténtico con la mejor experiencia enseñando
+                el corazón de la música colombiana.
               </p>
             </div>
 
             {/** Botones */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 pt-2 justify-center xl:justify-start">
               <Button
                 variant="hero"
                 size="lg"
-                className="flex items-center justify-center space-x-2 shadow-elegant w-full sm:w-auto"
+                className="flex items-center justify-center space-x-2 shadow-2xl w-full sm:w-auto text-lg h-14"
                 onClick={() => navigate("/cursos")}
               >
-                <Play className="h-5 w-5" />
+                <Play className="h-6 w-6" />
                 <span>Comenzar Ahora</span>
               </Button>
 
               <Button
                 variant="outline"
                 size="lg"
-                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto"
+                className="border-white/40 text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm w-full sm:w-auto text-lg h-14"
                 onClick={() => {
                   const biografiaSection = document.getElementById("biografia");
                   biografiaSection?.scrollIntoView({ behavior: "smooth" });
@@ -97,48 +65,46 @@ const Hero = memo(() => {
                 Conoce Mi Historia
               </Button>
             </div>
-
-            {/** Estadísticas */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
-              <Card className="bg-gradient-card p-4 sm:p-6 text-center shadow-warm">
-                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-primary mx-auto mb-2" />
-                <div className="text-xl sm:text-2xl font-bold text-primary">{stats.totalStudents}+</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Estudiantes</div>
-              </Card>
-
-              <Card className="bg-gradient-card p-4 sm:p-6 text-center shadow-warm">
-                <Star className="h-6 w-6 sm:h-8 sm:w-8 text-primary mx-auto mb-2" />
-                <div className="text-xl sm:text-2xl font-bold text-primary">{stats.totalCourses}+</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Cursos</div>
-              </Card>
-            </div>
           </div>
 
-          {/** CUADRO A LA DERECHA */}
-          <div className="mt-8 lg:mt-0 flex lg:justify-center lg:items-center">
-            <div className="relative w-full max-w-md">
-              <div className="absolute inset-0 bg-gradient-hero rounded-3xl transform rotate-3 animate-float -z-10 opacity-90"></div>
+          {/** CUADRO A LA DERECHA - VIDEO DE PRESENTACIÓN */}
+          <div className="mt-8 xl:mt-0 flex xl:justify-center xl:items-center">
+            <div className="relative w-full max-w-lg group">
+              {/** Decoración animada de fondo */}
+              <div className="absolute inset-0 bg-gradient-hero rounded-[2.5rem] transform rotate-3 scale-105 opacity-40 blur-2xl group-hover:opacity-60 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-vallenato-red/30 rounded-[2.5rem] transform -rotate-2 scale-100 opacity-30 animate-pulse -z-10"></div>
 
-              <Card className="relative z-10 bg-card/95 backdrop-blur-sm p-6 sm:p-8 rounded-3xl shadow-elegant border-2 border-primary/20 w-full max-w-md">
+              <Card className="relative z-10 bg-black/40 backdrop-blur-xl p-5 sm:p-8 rounded-[2rem] lg:rounded-[2.5rem] shadow-2xl border border-white/10 w-full overflow-hidden">
                 <div className="space-y-6">
                   <div className="text-center">
-                    <h3 className="text-2xl font-bold text-primary mb-2">Clase Gratuita</h3>
-                    <p className="text-muted-foreground">
-                      Aprende tu primera canción en 30 minutos
+                    <h3 className="text-xl lg:text-2xl font-bold text-white mb-2">
+                      Presentación
+                    </h3>
+                    <p className="text-xs lg:text-sm text-white/60">
+                      Conoce nuestra academia y metodología
                     </p>
                   </div>
 
-                  <div className="aspect-video bg-gradient-accent rounded-lg flex items-center justify-center">
-                    <Play className="h-16 w-16 text-white opacity-80" />
+                  <div className="overflow-hidden rounded-2xl border border-white/10 shadow-inner bg-black aspect-video relative">
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src="https://www.youtube.com/embed/efFC9ROqTzM"
+                      title="Video de presentación"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full"
+                    ></iframe>
                   </div>
 
                   <Button
                     variant="hero"
-                    className="w-full"
+                    className="w-full h-12 text-base font-bold shadow-lg"
                     size="lg"
                     onClick={() => navigate("/cursos")}
                   >
-                    Comenzar Ahora Gratis
+                    Explorar Cursos
                   </Button>
                 </div>
               </Card>
@@ -148,8 +114,6 @@ const Hero = memo(() => {
       </div>
     </section>
   );
-});
-
-Hero.displayName = 'Hero';
+};
 
 export default Hero;
