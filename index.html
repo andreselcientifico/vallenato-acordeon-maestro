@@ -3,19 +3,57 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Academia Vallenato - Maestro del Acordeón | Cursos de Vallenato Online</title>
-    <meta name="description" content="Aprende vallenato auténtico con el maestro del acordeón. Cursos online desde principiante hasta avanzado. 20+ años de experiencia enseñando música colombiana." />
+    <title>
+      Academia Vallenato - Maestro del Acordeón | Cursos de Vallenato Online
+    </title>
+    <meta
+      name="description"
+      content="Aprende vallenato auténtico con el maestro del acordeón. Cursos online desde principiante hasta avanzado. 20+ años de experiencia enseñando música colombiana."
+    />
     <meta name="author" content="Academia Vallenato" />
-    <meta name="keywords" content="vallenato, acordeón, cursos de música, música colombiana, clases online, academia musical" />
+    <meta
+      name="keywords"
+      content="vallenato, acordeón, cursos de música, música colombiana, clases online, academia musical"
+    />
 
-    <meta property="og:title" content="Academia Vallenato - Maestro del Acordeón" />
-    <meta property="og:description" content="Aprende vallenato auténtico con cursos online profesionales. Más de 20 años de experiencia." />
+    <meta
+      property="og:title"
+      content="Academia Vallenato - Maestro del Acordeón"
+    />
+    <meta
+      property="og:description"
+      content="Aprende vallenato auténtico con cursos online profesionales. Más de 20 años de experiencia."
+    />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="/src/assets/hero-background.webp" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:site" content="@AcademiaVallenato" />
+    <meta name="twitter:image" content="/src/assets/hero-background.webp" />
+
+    <!-- Google Fonts Optimization (Non-blocking) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <!-- Preload LCP Image -->
+    <link
+      rel="preload"
+      href="/src/assets/hero-background.webp"
+      as="image"
+      fetchpriority="high"
+    />
   </head>
 
   <body>
@@ -23,38 +61,47 @@
     <script type="module" src="/src/main.tsx"></script>
     <script>
       // Registrar Service Worker para PWA y cache
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js", { scope: "/" })
             .then((registration) => {
-              console.log('✅ Service Worker registrado:', registration);
-              
+              console.log("✅ Service Worker registrado:", registration);
+
               // Verificar actualizaciones periódicamente
               setInterval(() => {
                 registration.update();
               }, 60000); // Cada minuto
-              
+
               // Notificar si hay una nueva versión
-              registration.addEventListener('updatefound', () => {
+              registration.addEventListener("updatefound", () => {
                 const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    console.log('🔄 Nueva versión del Service Worker disponible');
+                newWorker.addEventListener("statechange", () => {
+                  if (
+                    newWorker.state === "installed" &&
+                    navigator.serviceWorker.controller
+                  ) {
+                    console.log(
+                      "🔄 Nueva versión del Service Worker disponible",
+                    );
                   }
                 });
               });
             })
             .catch((registrationError) => {
-              console.error('❌ Error al registrar Service Worker:', registrationError);
+              console.error(
+                "❌ Error al registrar Service Worker:",
+                registrationError,
+              );
             });
 
           // Limpiar cache corrupto si hay error
-          navigator.serviceWorker.addEventListener('controllerchange', () => {
-            console.log('🔄 Controlador del Service Worker cambió');
+          navigator.serviceWorker.addEventListener("controllerchange", () => {
+            console.log("🔄 Controlador del Service Worker cambió");
           });
         });
       } else {
-        console.warn('⚠️ Service Workers no soportado en este navegador');
+        console.warn("⚠️ Service Workers no soportado en este navegador");
       }
     </script>
   </body>

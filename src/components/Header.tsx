@@ -146,6 +146,9 @@ const Header = memo(() => {
             src={valenatoLogo}
             alt="Vallenato Academy"
             className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover shadow-warm animate-glow"
+            width="48"
+            height="48"
+            decoding="async"
           />
           <div className="min-w-0">
             <h1 className="text-lg sm:text-xl font-bold text-primary truncate">

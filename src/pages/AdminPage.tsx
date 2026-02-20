@@ -1023,7 +1023,12 @@ const AdminPage = () => {
                       placeholder="Ej: Certificado incluido"
                       onKeyPress={(e) => e.key === "Enter" && addFeature()}
                     />
-                    <Button onClick={addFeature} variant="outline" size="icon">
+                    <Button
+                      onClick={addFeature}
+                      variant="outline"
+                      size="icon"
+                      aria-label="Agregar característica"
+                    >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
@@ -1035,10 +1040,15 @@ const AdminPage = () => {
                         className="gap-2 pl-3"
                       >
                         {feature}
-                        <Trash2
-                          className="h-3 w-3 cursor-pointer hover:text-destructive"
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 hover:bg-transparent"
                           onClick={() => removeFeature(index)}
-                        />
+                          aria-label={`Eliminar característica ${feature}`}
+                        >
+                          <Trash2 className="h-3 w-3 cursor-pointer hover:text-destructive" />
+                        </Button>
                       </Badge>
                     ))}
                   </div>
@@ -1118,6 +1128,11 @@ const AdminPage = () => {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => toggleModule(mIndex)}
+                                  aria-label={
+                                    isExpanded
+                                      ? "Contraer módulo"
+                                      : "Expandir módulo"
+                                  }
                                 >
                                   {isExpanded ? (
                                     <ChevronUp className="h-4 w-4" />
@@ -1130,6 +1145,7 @@ const AdminPage = () => {
                                   size="sm"
                                   className="text-destructive hover:bg-destructive/10"
                                   onClick={() => removeModule(mIndex)}
+                                  aria-label="Eliminar módulo"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -1282,6 +1298,7 @@ const AdminPage = () => {
                                         onClick={() =>
                                           removeLesson(mIndex, lIndex)
                                         }
+                                        aria-label="Eliminar lección"
                                       >
                                         <Trash2 className="h-4 w-4" />
                                       </Button>
@@ -1477,6 +1494,7 @@ const AdminPage = () => {
                               size="icon"
                               className="text-destructive hover:bg-destructive/10"
                               onClick={() => deleteCourse(course.id)}
+                              aria-label={`Eliminar curso ${course.title}`}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -1565,6 +1583,7 @@ const AdminPage = () => {
                             size="sm"
                             onClick={() => deleteSubscription(plan.id)}
                             className="text-destructive hover:bg-destructive/10"
+                            aria-label={`Eliminar plan ${plan.name}`}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -1680,6 +1699,7 @@ const AdminPage = () => {
                               size="sm"
                               onClick={() => deleteAchievement(achievement.id)}
                               className="text-destructive hover:bg-destructive/10 min-h-[40px] sm:min-h-0"
+                              aria-label={`Eliminar logro ${achievement.name}`}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -1828,10 +1848,15 @@ const AdminPage = () => {
                           }`}
                         >
                           {negative ? "✖" : "✔"} {normalizeFeature(feature)}
-                          <Trash2
-                            className="h-3 w-3 cursor-pointer hover:text-destructive"
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 p-0 hover:bg-transparent"
                             onClick={() => removePlanFeature(index)}
-                          />
+                            aria-label={`Eliminar característica ${normalizeFeature(feature)}`}
+                          >
+                            <Trash2 className="h-3 w-3 cursor-pointer hover:text-destructive" />
+                          </Button>
                         </Badge>
                       );
                     })}

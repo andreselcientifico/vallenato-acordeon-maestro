@@ -53,6 +53,9 @@ const PhotoCarousel = () => {
                   src={image}
                   alt={`Andrea Paola ${index + 1}`}
                   className="w-full h-full object-cover"
+                  decoding="async"
+                  width="896"
+                  height="504"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
               </div>
@@ -65,6 +68,7 @@ const PhotoCarousel = () => {
             size="icon"
             className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={prevSlide}
+            aria-label="Anterior imagen"
           >
             <ChevronLeft className="h-8 w-8" />
           </Button>
@@ -74,20 +78,28 @@ const PhotoCarousel = () => {
             size="icon"
             className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={nextSlide}
+            aria-label="Siguiente imagen"
           >
             <ChevronRight className="h-8 w-8" />
           </Button>
 
           {/* Dots Indicator */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-4">
             {images.map((_, index) => (
               <button
                 key={index}
-                className={`h-2 rounded-full transition-all ${
-                  index === currentIndex ? "w-8 bg-primary" : "w-2 bg-white/50"
-                }`}
+                className="group/dot p-3 -m-3"
+                aria-label={`Ir a imagen ${index + 1}`}
                 onClick={() => setCurrentIndex(index)}
-              />
+              >
+                <div
+                  className={`h-2 rounded-full transition-all ${
+                    index === currentIndex
+                      ? "w-8 bg-primary"
+                      : "w-2 bg-white/50"
+                  }`}
+                />
+              </button>
             ))}
           </div>
         </div>

@@ -57,9 +57,7 @@ export const Quizz: React.FC<QuizProps> = ({ quiz, onQuizComplete }) => {
 
       // Cargar detalles de intentos previos
       const attemptDetails = await Promise.all(
-        attemptsData.map((attempt) =>
-          getQuizAttemptDetails(attempt.id)
-        )
+        attemptsData.map((attempt) => getQuizAttemptDetails(attempt.id)),
       );
       setPreviousAttempts(attemptDetails);
     } catch (error) {
@@ -109,7 +107,7 @@ export const Quizz: React.FC<QuizProps> = ({ quiz, onQuizComplete }) => {
         ([questionId, optionId]) => ({
           question_id: questionId,
           selected_option_id: optionId,
-        })
+        }),
       );
 
       const result = await submitQuiz(quiz.id, quizAnswers);
@@ -176,7 +174,7 @@ export const Quizz: React.FC<QuizProps> = ({ quiz, onQuizComplete }) => {
             {quiz.description && (
               <p className="text-gray-600 mt-2">{quiz.description}</p>
             )}
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-sm text-gray-700 mt-2">
               Porcentaje para aprobar: <Badge>{quiz.pass_percentage}%</Badge>
             </p>
           </div>
@@ -196,7 +194,7 @@ export const Quizz: React.FC<QuizProps> = ({ quiz, onQuizComplete }) => {
       <Card className="p-4">
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Progreso</span>
+            <span className="text-gray-700">Progreso</span>
             <span className="font-semibold">
               {answeredCount}/{questions.length} preguntas respondidas
             </span>
@@ -224,7 +222,7 @@ export const Quizz: React.FC<QuizProps> = ({ quiz, onQuizComplete }) => {
               {currentQuestion.question}
             </h4>
             {currentQuestion.description && (
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-700 text-sm">
                 {currentQuestion.description}
               </p>
             )}
@@ -235,7 +233,8 @@ export const Quizz: React.FC<QuizProps> = ({ quiz, onQuizComplete }) => {
             {currentQuestion.options
               .sort((a, b) => a.order - b.order)
               .map((option) => {
-                const isSelected = answers.get(currentQuestion.id) === option.id;
+                const isSelected =
+                  answers.get(currentQuestion.id) === option.id;
                 return (
                   <button
                     key={option.id}
@@ -323,9 +322,11 @@ const QuizResult: React.FC<QuizResultProps> = ({ result, onRetry }) => {
   return (
     <div className="space-y-6">
       {/* Result Summary */}
-      <Card className={`p-8 border-2 ${
-        passed ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
-      }`}>
+      <Card
+        className={`p-8 border-2 ${
+          passed ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
+        }`}
+      >
         <div className="flex items-center gap-6">
           {passed ? (
             <Award className="w-16 h-16 text-green-600" />
@@ -333,15 +334,20 @@ const QuizResult: React.FC<QuizResultProps> = ({ result, onRetry }) => {
             <AlertCircle className="w-16 h-16 text-red-600" />
           )}
           <div>
-            <h2 className={`text-3xl font-bold ${
-              passed ? "text-green-900" : "text-red-900"
-            }`}>
+            <h2
+              className={`text-3xl font-bold ${
+                passed ? "text-green-900" : "text-red-900"
+              }`}
+            >
               {passed ? "¡Quiz Aprobado!" : "Quiz No Aprobado"}
             </h2>
-            <p className={`text-lg ${
-              passed ? "text-green-800" : "text-red-800"
-            } mt-2`}>
-              Puntuación: {result.percentage.toFixed(1)}% ({result.score}/{result.total_score})
+            <p
+              className={`text-lg ${
+                passed ? "text-green-800" : "text-red-800"
+              } mt-2`}
+            >
+              Puntuación: {result.percentage.toFixed(1)}% ({result.score}/
+              {result.total_score})
             </p>
           </div>
         </div>
@@ -349,7 +355,9 @@ const QuizResult: React.FC<QuizResultProps> = ({ result, onRetry }) => {
 
       {/* Results Details */}
       <Card className="p-6">
-        <h3 className="text-xl font-semibold mb-4">Detalles de tus respuestas:</h3>
+        <h3 className="text-xl font-semibold mb-4">
+          Detalles de tus respuestas:
+        </h3>
         <div className="space-y-4">
           {result.results.map((questionResult, index) => (
             <div
@@ -372,7 +380,8 @@ const QuizResult: React.FC<QuizResultProps> = ({ result, onRetry }) => {
                   </p>
                   {!questionResult.is_correct && (
                     <p className="text-sm text-gray-600 mt-2">
-                      Respuesta correcta: Opción correcta (ID: {questionResult.correct_option_id})
+                      Respuesta correcta: Opción correcta (ID:{" "}
+                      {questionResult.correct_option_id})
                     </p>
                   )}
                   {questionResult.explanation && (
@@ -402,22 +411,33 @@ const QuizResult: React.FC<QuizResultProps> = ({ result, onRetry }) => {
             </div>
             {quizResult?.certificate && (
               <div className="flex-shrink-0">
-                <Button onClick={async () => {
-                  try {
-                    const blob = await downloadCertificatePDF(quizResult.certificate!.id);
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `certificate-${quizResult.certificate!.certificate_number}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
-                  } catch (err) {
-                    console.error(err);
-                    toast({ title: 'Error', description: 'No se pudo descargar el certificado', variant: 'destructive' });
-                  }
-                }} className="gap-2">Descargar certificado</Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      const blob = await downloadCertificatePDF(
+                        quizResult.certificate!.id,
+                      );
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `certificate-${quizResult.certificate!.certificate_number}.pdf`;
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                      window.URL.revokeObjectURL(url);
+                    } catch (err) {
+                      console.error(err);
+                      toast({
+                        title: "Error",
+                        description: "No se pudo descargar el certificado",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  className="gap-2"
+                >
+                  Descargar certificado
+                </Button>
               </div>
             )}
           </div>

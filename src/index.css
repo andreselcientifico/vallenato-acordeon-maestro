@@ -17,14 +17,14 @@ All colors MUST be HSL.
     --popover: 40 30% 98%;
     --popover-foreground: 15 15% 15%;
 
-    --primary: 25 85% 45%;
+    --primary: 25 85% 40%;
     --primary-foreground: 40 30% 98%;
 
     --secondary: 35 40% 90%;
     --secondary-foreground: 15 15% 15%;
 
     --muted: 35 40% 90%;
-    --muted-foreground: 15 15% 60%;
+    --muted-foreground: 15 15% 40%;
 
     --accent: 15 75% 55%;
     --accent-foreground: 40 30% 98%;
@@ -45,9 +45,21 @@ All colors MUST be HSL.
     --vallenato-brown: 25 40% 25%;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(var(--vallenato-gold)), hsl(var(--vallenato-red)));
-    --gradient-card: linear-gradient(145deg, hsl(var(--vallenato-cream)), hsl(var(--card)));
-    --gradient-accent: linear-gradient(90deg, hsl(var(--vallenato-red)), hsl(var(--vallenato-red-deep)));
+    --gradient-hero: linear-gradient(
+      135deg,
+      hsl(var(--vallenato-gold)),
+      hsl(var(--vallenato-red))
+    );
+    --gradient-card: linear-gradient(
+      145deg,
+      hsl(var(--vallenato-cream)),
+      hsl(var(--card))
+    );
+    --gradient-accent: linear-gradient(
+      90deg,
+      hsl(var(--vallenato-red)),
+      hsl(var(--vallenato-red-deep))
+    );
 
     /* Shadows */
     --shadow-warm: 0 10px 30px -10px hsl(var(--vallenato-gold) / 0.3);

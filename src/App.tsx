@@ -40,7 +40,9 @@ const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const FAQPage = lazy(() => import("./pages/FAQPage"));
 import AdminRoute from "./components/AdminRoute";
-const AchievementSystemInitializer = lazy(() => import("./components/AchievementSystemInitializer"));
+const AchievementSystemInitializer = lazy(
+  () => import("./components/AchievementSystemInitializer"),
+);
 
 // Preload de rutas críticas
 const preloadCriticalRoutes = () => {
@@ -76,9 +78,11 @@ const LoadingScreen = () => (
 const App = () => {
   // Preload de rutas críticas al montar la app
   useEffect(() => {
+    // Preload de rutas críticas después de que la página inicial se haya cargado
+    // Aumentamos el delay a 2000ms para no penalizar el LCP inicial
     const timer = setTimeout(() => {
       preloadCriticalRoutes();
-    }, 100); // Pequeño delay para no bloquear el render inicial
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -90,55 +94,78 @@ const App = () => {
           <AchievementNotificationProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter          >
-            <Suspense fallback={<LoadingScreen />}>
-              <AchievementSystemInitializer />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/cursos" element={
-                  <TooltipProvider>
-                    <PayPalScriptProvider options={paypalOptions}>
-                      <CoursesPage />
-                    </PayPalScriptProvider>
-                  </TooltipProvider>
-                }
-                />
-                <Route path="/mis-cursos" element={<MyCoursesPage />} />
-                <Route path="/mis-logros" element={<MyAchievementsPage />} />
-                <Route path="/suscripciones" element={
-                  <PayPalScriptProvider options={paypalOptionsSuscription}>
-                    <SubscriptionsPage />
-                  </PayPalScriptProvider>
-                } />
-                <Route path="/curso/:courseId/preview" element={<CoursePreviewPage />} />
-                <Route path="/curso/:courseId" element={<CoursePlayerPage />} />
-                <Route path="/perfil" element={<ProfilePage />} />
-                <Route path="/cambiar-contrasena" element={<ChangePasswordPage />} />
-                <Route path="/olvide-contrasena" element={<ForgotPasswordPage />} />
-                <Route path="/resetear-contrasena" element={<ResetPasswordPage />} />
-                <Route path="/contacto" element={<ContactPage />} />
-                <Route path="/politica-privacidad" element={<PrivacyPage />} />
-                <Route path="/terminos-servicio" element={<TermsPage />} />
-                <Route path="/preguntas-frecuentes" element={<FAQPage />} />
+            <BrowserRouter>
+              <Suspense fallback={<LoadingScreen />}>
+                <AchievementSystemInitializer />
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route
+                    path="/cursos"
+                    element={
+                      <TooltipProvider>
+                        <PayPalScriptProvider options={paypalOptions}>
+                          <CoursesPage />
+                        </PayPalScriptProvider>
+                      </TooltipProvider>
+                    }
+                  />
+                  <Route path="/mis-cursos" element={<MyCoursesPage />} />
+                  <Route path="/mis-logros" element={<MyAchievementsPage />} />
+                  <Route
+                    path="/suscripciones"
+                    element={
+                      <PayPalScriptProvider options={paypalOptionsSuscription}>
+                        <SubscriptionsPage />
+                      </PayPalScriptProvider>
+                    }
+                  />
+                  <Route
+                    path="/curso/:courseId/preview"
+                    element={<CoursePreviewPage />}
+                  />
+                  <Route
+                    path="/curso/:courseId"
+                    element={<CoursePlayerPage />}
+                  />
+                  <Route path="/perfil" element={<ProfilePage />} />
+                  <Route
+                    path="/cambiar-contrasena"
+                    element={<ChangePasswordPage />}
+                  />
+                  <Route
+                    path="/olvide-contrasena"
+                    element={<ForgotPasswordPage />}
+                  />
+                  <Route
+                    path="/resetear-contrasena"
+                    element={<ResetPasswordPage />}
+                  />
+                  <Route path="/contacto" element={<ContactPage />} />
+                  <Route
+                    path="/politica-privacidad"
+                    element={<PrivacyPage />}
+                  />
+                  <Route path="/terminos-servicio" element={<TermsPage />} />
+                  <Route path="/preguntas-frecuentes" element={<FAQPage />} />
 
-                {/* RUTA CON PROTECCIÓN LAZY */}
-                <Route
-                  path="/admin"
-                  element={
+                  {/* RUTA CON PROTECCIÓN LAZY */}
+                  <Route
+                    path="/admin"
+                    element={
                       <AdminRoute>
                         <AdminPage />
                       </AdminRoute>
-                  }
-                />
+                    }
+                  />
 
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </AchievementNotificationProvider>
-      </ErrorProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </AchievementNotificationProvider>
+        </ErrorProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
 

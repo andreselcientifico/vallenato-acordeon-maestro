@@ -26,7 +26,7 @@ Esta aplicación es una academia en línea especializada en la enseñanza de mú
 
 ## Inicio del Proyecto
 
-Este proyecto se inició con la ayuda de Lovable, una plataforma de desarrollo asistido por IA, pero ha sido completamente modificado y construido por el desarrollador principal (andreselcientifico).
+Este proyecto fue desarrollado de manera independiente para Academia Vallenato, utilizando tecnologías modernas para ofrecer la mejor experiencia educativa en música vallenata.
 
 ## Cómo Ejecutar el Proyecto
 
@@ -76,22 +76,26 @@ src/
 ## Características Principales
 
 ### Sistema de Cursos
+
 - Visualización de cursos con imágenes y descripciones
 - Filtros por categoría (básico/premium), nivel y calificación
 - Sistema de búsqueda
 
 ### Autenticación
+
 - Registro e inicio de sesión
 - Protección de rutas
 - Gestión de estado de autenticación
 
 ### Reproductor de Lecciones
+
 - Soporte para videos (YouTube, archivos locales)
 - Cuestionarios y ejercicios interactivos
 - Seguimiento automático de progreso
 - Navegación entre lecciones
 
 ### Perfil de Usuario
+
 - Visualización de cursos adquiridos
 - Progreso general de aprendizaje
 

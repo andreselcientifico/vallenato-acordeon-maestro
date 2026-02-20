@@ -15,7 +15,7 @@ const VideoPlayer = ({ src }: VideoPlayerProps) => {
         <iframe
           width="100%"
           height="100%"
-          src={`https://www.youtube.com/embed/${youtubeId}`}
+          src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
           title="Video del curso"
           allowFullScreen
         ></iframe>

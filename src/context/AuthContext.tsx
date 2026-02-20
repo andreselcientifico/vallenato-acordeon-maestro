@@ -45,11 +45,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    */
   useEffect(() => {
     (async () => {
+      // Solo intentamos obtener el usuario si hay indicios de que ha iniciado sesión
+      // o si es la primera vez (para verificar cookies persistentes)
+      // Si el backend devolvió 401 antes, guardamos un flag para no reintentar innecesariamente
+      const wasLoggedOut = localStorage.getItem("was_logged_out") === "true";
+
+      if (wasLoggedOut) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const data = await getCurrentUser();
-        setUser(data); // data ya es null si falló
+        setUser(data);
+        if (!data) {
+          localStorage.setItem("was_logged_out", "true");
+        } else {
+          localStorage.removeItem("was_logged_out");
+        }
       } catch (err) {
-        setUser(null); // ante cualquier error, no hay usuario
+        setUser(null);
+        localStorage.setItem("was_logged_out", "true");
       } finally {
         setLoading(false);
       }
@@ -60,6 +76,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const me = await getCurrentUser();
       setUser(me);
+      if (me) {
+        localStorage.removeItem("was_logged_out");
+      }
     } catch {
       setUser(null);
     }
@@ -84,7 +103,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         throw new Error(errorText);
       }
-
     } catch (error) {
       // mostrar un mensaje al usuario si quieres
       toast.error(`Error al cerrar sesión: ${(error as Error).message}`);
@@ -95,7 +113,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       window.location.href = "/#inicio";
     }
   };
-
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>

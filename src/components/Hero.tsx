@@ -18,6 +18,10 @@ const Hero = () => {
         alt="Fondo musical vallenato"
         className="absolute inset-0 w-full h-full object-cover"
         loading="eager"
+        fetchPriority="high"
+        decoding="async"
+        width="1920"
+        height="1080"
       />
 
       {/** Overlay para legibilidad mejorada */}
@@ -77,10 +81,10 @@ const Hero = () => {
               <Card className="relative z-10 bg-black/40 backdrop-blur-xl p-5 sm:p-8 rounded-[2rem] lg:rounded-[2.5rem] shadow-2xl border border-white/10 w-full overflow-hidden">
                 <div className="space-y-6">
                   <div className="text-center">
-                    <h3 className="text-xl lg:text-2xl font-bold text-white mb-2">
+                    <h2 className="text-xl lg:text-2xl font-bold text-white mb-2">
                       Presentación
-                    </h3>
-                    <p className="text-xs lg:text-sm text-white/60">
+                    </h2>
+                    <p className="text-xs lg:text-sm text-white/80">
                       Conoce nuestra academia y metodología
                     </p>
                   </div>
@@ -89,7 +93,7 @@ const Hero = () => {
                     <iframe
                       width="100%"
                       height="100%"
-                      src="https://www.youtube.com/embed/efFC9ROqTzM"
+                      src="https://www.youtube-nocookie.com/embed/efFC9ROqTzM"
                       title="Video de presentación"
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
