@@ -10,13 +10,13 @@ const Hero = () => {
   return (
     <section
       id="inicio"
-      className="relative min-h-[calc(100vh-4rem)] flex items-start xl:items-center justify-center px-4 pt-20 pb-20 overflow-hidden"
+      className="relative min-h-[calc(100vh-4rem)] flex items-start lg:items-center justify-center px-4 pt-10 sm:pt-20 pb-20 overflow-hidden"
     >
       {/** Imagen REAL para el fondo del Hero (LCP) */}
       <img
         src={heroBackground}
         alt="Fondo musical vallenato"
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-cover object-right lg:object-center"
         loading="eager"
         fetchPriority="high"
         decoding="async"
@@ -28,9 +28,9 @@ const Hero = () => {
       <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent dark:from-black/80"></div>
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 items-start xl:items-center max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start lg:items-center max-w-7xl mx-auto">
           {/** CONTENIDO PRINCIPAL */}
-          <div className="space-y-6 sm:space-y-8 max-w-xl pt-12 xl:pt-0 text-center xl:text-left mx-auto xl:mx-0">
+          <div className="space-y-6 sm:space-y-8 max-w-xl pt-12 lg:pt-0 text-center lg:text-left mx-auto lg:mx-0">
             <div className="space-y-4 sm:space-y-6">
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight text-white drop-shadow-[0_5px_15px_rgba(0,0,0,0.6)]">
                 <span className="text-primary">Maestro</span>{" "}
@@ -46,7 +46,7 @@ const Hero = () => {
             </div>
 
             {/** Botones */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-2 justify-center xl:justify-start">
+            <div className="flex flex-col sm:flex-row gap-4 pt-2 justify-center lg:justify-start">
               <Button
                 variant="hero"
                 size="lg"
@@ -72,7 +72,7 @@ const Hero = () => {
           </div>
 
           {/** CUADRO A LA DERECHA - VIDEO DE PRESENTACIÓN */}
-          <div className="mt-8 xl:mt-0 flex xl:justify-center xl:items-center">
+          <div className="mt-8 lg:mt-0 flex lg:justify-center lg:items-center">
             <div className="relative w-full max-w-lg group">
               {/** Decoración animada de fondo */}
               <div className="absolute inset-0 bg-gradient-hero rounded-[2.5rem] transform rotate-3 scale-105 opacity-40 blur-2xl group-hover:opacity-60 transition-opacity duration-500"></div>
