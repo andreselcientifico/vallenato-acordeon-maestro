@@ -39,8 +39,8 @@ export default defineConfig(({ mode }) => ({
             name: "preset-default",
             params: {
               overrides: {
-                cleanupNumericValues: false,
                 removeViewBox: false,
+                cleanupNumericValues: false,
               },
             },
           },

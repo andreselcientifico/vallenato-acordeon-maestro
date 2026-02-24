@@ -3,13 +3,13 @@ import { useTheme } from "next-themes";
 import { Button } from "./ui/button";
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+      onClick={() => setTheme(resolvedTheme === "light" ? "dark" : "light")}
       className="text-foreground hover:bg-muted/20"
       aria-label="Toggle theme"
     >
