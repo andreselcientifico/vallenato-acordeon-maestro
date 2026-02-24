@@ -2,13 +2,11 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
+import { ResponsiveImage } from "./ui/ResponsiveImage";
 
-import photo1 from "../assets/photos/photo1.webp";
-import photo2 from "../assets/photos/photo2.webp";
-import photo3 from "../assets/photos/photo3.webp";
-import photo4 from "../assets/photos/photo4.webp";
+import { photos } from "@/util/imageImports";
 
-const images = [photo1, photo2, photo3, photo4];
+const images = photos;
 
 const PhotoCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -49,11 +47,15 @@ const PhotoCarousel = () => {
                   index === currentIndex ? "opacity-100" : "opacity-0"
                 }`}
               >
-                <img
-                  src={image}
+                <ResponsiveImage
+                  src={image.original}
+                  srcSmall={image.small}
+                  srcMedium={image.medium}
+                  srcLarge={image.large}
                   alt={`Andrea Paola ${index + 1}`}
                   className="w-full h-full object-cover"
-                  decoding="async"
+                  widths={{ small: 480, medium: 900, large: 1600 }}
+                  sizes="(max-width: 896px) 100vw, 896px"
                   width="896"
                   height="504"
                 />

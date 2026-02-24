@@ -183,6 +183,9 @@ dist
 [Ll]ib64
 [Ll]ocal
 [Ss]cripts
+# Re-incluir tus scripts del proyecto
+!src/scripts/
+!src/scripts/**
 pyvenv.cfg
 .venv
 pip-selfcheck.json

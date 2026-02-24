@@ -1,15 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { ViteImageOptimizer } from "vite-plugin-image-optimizer";
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   base: "/",
   server: {
-    // https: {
-    //   key: fs.readFileSync(path.resolve(__dirname, "../certificados/localhost-key.pem")),
-    //   cert: fs.readFileSync(path.resolve(__dirname, "../certificados/localhost.pem")),
-    // },
     host: "::",
     port: 8080,
     hmr: false,
@@ -20,86 +16,117 @@ export default defineConfig(({ mode }) => ({
     host: true,
     port: 4173,
   },
-  plugins: [react()].filter(Boolean),
+  plugins: [
+    react(),
+    ViteImageOptimizer({
+      webp: {
+        quality: 85,
+        lossless: false,
+        effort: 4,
+      },
+      png: {
+        quality: 85,
+        compressionLevel: 9,
+      },
+      jpeg: {
+        quality: 85,
+        progressive: true,
+      },
+      svg: {
+        multipass: true,
+        plugins: [
+          {
+            name: "preset-default",
+            params: {
+              overrides: {
+                cleanupNumericValues: false,
+                removeViewBox: false,
+              },
+            },
+          },
+        ],
+      },
+      test:
+        mode === "production" ? /\.(png|svg)$/i : /\.(jpe?g|png|webp|svg)$/i,
+      includePublic: true,
+      logStats: true,
+      ansiColors: true,
+      cache: true,
+      cacheLocation: path.resolve(
+        __dirname,
+        "node_modules/.cache/vite-plugin-image-optimizer",
+      ),
+    }),
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
   build: {
-    // Optimizaciones de build
     target: "esnext",
     minify: "terser",
     sourcemap: false,
     terserOptions: {
       compress: {
-        drop_console: true, // Elimina console.logs
+        drop_console: true,
         drop_debugger: true,
-        pure_funcs: ["console.log", "console.info", "console.debug"], // Elimina funciones específicas
+        pure_funcs: ["console.log", "console.info", "console.debug"],
       },
     },
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Dividir node_modules agresivamente
           if (id.includes("node_modules")) {
-            // React core
             if (id.includes("react/") || id.includes("react-dom/")) {
               return "react-core";
             }
-
-            // React Router
             if (id.includes("react-router")) {
               return "react-router";
             }
-
-            // UI Libraries (Radix, Lucide)
             if (id.includes("@radix-ui") || id.includes("lucide-react")) {
               return "vendor-ui";
             }
-
-            // TanStack Query
             if (id.includes("@tanstack/react-query")) {
               return "react-query";
             }
-
-            // PayPal (muy pesado, separarlo)
             if (id.includes("@paypal")) {
               return "paypal";
             }
-
-            // Date utilities
             if (id.includes("date-fns")) {
               return "date-utils";
             }
           }
-
-          // Páginas - cada una en su propio chunk
           if (id.includes("/src/pages/")) {
             const pageName = id.split("/src/pages/")[1].split(".")[0];
             return `page-${pageName}`;
           }
-
-          // Componentes grandes en chunks separados
           if (id.includes("/src/components/") && id.length > 1000) {
             const componentPath = id.split("/src/components/")[1];
             const componentName = componentPath.split("/")[0];
             return `comp-${componentName}`;
           }
         },
-        // Optimizar nombres de chunks para mejor caching
         chunkFileNames: "assets/[name]-[hash].js",
         entryFileNames: "assets/[name]-[hash].js",
-        assetFileNames: "assets/[name]-[hash].[ext]",
+        assetFileNames: (assetInfo) => {
+          // Preservar nombres de archivos responsive sin duplicar hash
+          if (
+            assetInfo.name?.match(
+              /-(?:small|medium|large)\.(webp|jpg|jpeg|png)$/i,
+            )
+          ) {
+            return "assets/[name][extname]";
+          }
+          return "assets/[name]-[hash][extname]";
+        },
       },
     },
-    // Optimizaciones adicionales
     chunkSizeWarningLimit: 500,
     cssCodeSplit: true,
     reportCompressedSize: true,
     assetsInlineLimit: 4096,
   },
-  // Optimizaciones de desarrollo
   optimizeDeps: {
     include: [
       "react",
@@ -111,7 +138,6 @@ export default defineConfig(({ mode }) => ({
     ],
     exclude: ["@vite/client", "@vite/env"],
   },
-  // Preload de módulos críticos
   ssr: {
     noExternal: ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu"],
   },

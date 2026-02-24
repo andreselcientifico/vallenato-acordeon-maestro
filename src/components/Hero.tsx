@@ -2,7 +2,8 @@ import { Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import heroBackground from "@/assets/hero-background.webp";
+import { heroBackground } from "@/util/imageImports";
+import { ResponsiveImage } from "./ui/ResponsiveImage";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -13,13 +14,17 @@ const Hero = () => {
       className="relative min-h-[calc(100vh-4rem)] flex items-start lg:items-center justify-center px-4 pt-10 sm:pt-20 pb-20 overflow-hidden"
     >
       {/** Imagen REAL para el fondo del Hero (LCP) */}
-      <img
-        src={heroBackground}
+      <ResponsiveImage
+        src={heroBackground.original}
+        srcSmall={heroBackground.small}
+        srcMedium={heroBackground.medium}
+        srcLarge={heroBackground.large}
         alt="Fondo musical vallenato"
         className="absolute inset-0 w-full h-full object-cover object-right lg:object-center"
         loading="eager"
         fetchPriority="high"
-        decoding="async"
+        widths={{ small: 640, medium: 1280, large: 1920 }}
+        sizes="100vw"
         width="1920"
         height="1080"
       />

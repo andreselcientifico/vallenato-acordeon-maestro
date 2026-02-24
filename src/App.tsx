@@ -14,6 +14,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { ThemeProvider } from "next-themes";
 import { AchievementNotificationProvider } from "@/hooks/useAchievementNotifications";
 import { ErrorProvider } from "@/context/ErrorContext";
 
@@ -89,82 +90,89 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ErrorProvider>
-          <AchievementNotificationProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Suspense fallback={<LoadingScreen />}>
-                <AchievementSystemInitializer />
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route
-                    path="/cursos"
-                    element={
-                      <TooltipProvider>
-                        <PayPalScriptProvider options={paypalOptions}>
-                          <CoursesPage />
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <TooltipProvider>
+          <ErrorProvider>
+            <AchievementNotificationProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Suspense fallback={<LoadingScreen />}>
+                  <AchievementSystemInitializer />
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route
+                      path="/cursos"
+                      element={
+                        <TooltipProvider>
+                          <PayPalScriptProvider options={paypalOptions}>
+                            <CoursesPage />
+                          </PayPalScriptProvider>
+                        </TooltipProvider>
+                      }
+                    />
+                    <Route path="/mis-cursos" element={<MyCoursesPage />} />
+                    <Route
+                      path="/mis-logros"
+                      element={<MyAchievementsPage />}
+                    />
+                    <Route
+                      path="/suscripciones"
+                      element={
+                        <PayPalScriptProvider
+                          options={paypalOptionsSuscription}
+                        >
+                          <SubscriptionsPage />
                         </PayPalScriptProvider>
-                      </TooltipProvider>
-                    }
-                  />
-                  <Route path="/mis-cursos" element={<MyCoursesPage />} />
-                  <Route path="/mis-logros" element={<MyAchievementsPage />} />
-                  <Route
-                    path="/suscripciones"
-                    element={
-                      <PayPalScriptProvider options={paypalOptionsSuscription}>
-                        <SubscriptionsPage />
-                      </PayPalScriptProvider>
-                    }
-                  />
-                  <Route
-                    path="/curso/:courseId/preview"
-                    element={<CoursePreviewPage />}
-                  />
-                  <Route
-                    path="/curso/:courseId"
-                    element={<CoursePlayerPage />}
-                  />
-                  <Route path="/perfil" element={<ProfilePage />} />
-                  <Route
-                    path="/cambiar-contrasena"
-                    element={<ChangePasswordPage />}
-                  />
-                  <Route
-                    path="/olvide-contrasena"
-                    element={<ForgotPasswordPage />}
-                  />
-                  <Route
-                    path="/resetear-contrasena"
-                    element={<ResetPasswordPage />}
-                  />
-                  <Route path="/contacto" element={<ContactPage />} />
-                  <Route
-                    path="/politica-privacidad"
-                    element={<PrivacyPage />}
-                  />
-                  <Route path="/terminos-servicio" element={<TermsPage />} />
-                  <Route path="/preguntas-frecuentes" element={<FAQPage />} />
+                      }
+                    />
+                    <Route
+                      path="/curso/:courseId/preview"
+                      element={<CoursePreviewPage />}
+                    />
+                    <Route
+                      path="/curso/:courseId"
+                      element={<CoursePlayerPage />}
+                    />
+                    <Route path="/perfil" element={<ProfilePage />} />
+                    <Route
+                      path="/cambiar-contrasena"
+                      element={<ChangePasswordPage />}
+                    />
+                    <Route
+                      path="/olvide-contrasena"
+                      element={<ForgotPasswordPage />}
+                    />
+                    <Route
+                      path="/resetear-contrasena"
+                      element={<ResetPasswordPage />}
+                    />
+                    <Route path="/contacto" element={<ContactPage />} />
+                    <Route
+                      path="/politica-privacidad"
+                      element={<PrivacyPage />}
+                    />
+                    <Route path="/terminos-servicio" element={<TermsPage />} />
+                    <Route path="/preguntas-frecuentes" element={<FAQPage />} />
 
-                  {/* RUTA CON PROTECCIÓN LAZY */}
-                  <Route
-                    path="/admin"
-                    element={
-                      <AdminRoute>
-                        <AdminPage />
-                      </AdminRoute>
-                    }
-                  />
+                    {/* RUTA CON PROTECCIÓN LAZY */}
+                    <Route
+                      path="/admin"
+                      element={
+                        <AdminRoute>
+                          <AdminPage />
+                        </AdminRoute>
+                      }
+                    />
 
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </BrowserRouter>
-          </AchievementNotificationProvider>
-        </ErrorProvider>
-      </TooltipProvider>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </BrowserRouter>
+            </AchievementNotificationProvider>
+          </ErrorProvider>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };

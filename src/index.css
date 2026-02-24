@@ -220,13 +220,13 @@ All colors MUST be HSL.
     --input: 15 15% 25%;
     --ring: 45 95% 50%;
 
-    /* Dark mode vallenato colors */
+    /* Dark mode vallenato colors - Corrected to maintain contrast */
     --vallenato-gold: 45 85% 60%;
     --vallenato-gold-light: 45 75% 70%;
     --vallenato-red: 15 70% 60%;
     --vallenato-red-deep: 15 80% 50%;
     --vallenato-cream: 40 20% 15%;
-    --vallenato-brown: 25 30% 80%;
+    --vallenato-brown: 25 40% 15%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;

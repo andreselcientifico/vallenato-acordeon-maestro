@@ -1,5 +1,7 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /perfil
 
 User-agent: Bingbot
 Allow: /
@@ -12,3 +14,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://vallenatofemenino.com/sitemap.xml

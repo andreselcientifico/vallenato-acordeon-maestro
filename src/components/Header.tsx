@@ -10,10 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import AuthDialog from "./AuthDialog";
-import valenatoLogo from "@/assets/vallenato-logo.webp";
+import { logo } from "@/util/imageImports";
 import { useAuth } from "@/context/AuthContext";
 import { sendEmail } from "@/api/email";
 import { getUserSubscriptions } from "@/api/subscriptions";
+import { ThemeToggle } from "./ThemeToggle";
+import { ResponsiveImage } from "./ui/ResponsiveImage";
 
 const Header = memo(() => {
   const navigate = useNavigate();
@@ -83,7 +85,7 @@ const Header = memo(() => {
   );
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-white dark:bg-slate-900 border-b border-border shadow-lg">
+    <header className="fixed top-0 w-full z-50 bg-background border-b border-border shadow-sm">
       {/* Banner de verificación compacto (fijo debajo del header para no romper layout) */}
       {!loading && user && user.verified === false && bannerVisible && (
         <div className="fixed left-0 right-0 top-20 z-40 flex justify-center pointer-events-none">
@@ -142,13 +144,17 @@ const Header = memo(() => {
           className="flex items-center space-x-2 sm:space-x-3 cursor-pointer"
           onClick={() => navigate("/")}
         >
-          <img
-            src={valenatoLogo}
+          <ResponsiveImage
+            src={logo.original}
+            srcSmall={logo.small}
+            srcMedium={logo.medium}
+            srcLarge={logo.large}
             alt="Vallenato Academy"
             className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover shadow-warm animate-glow"
+            widths={{ small: 48, medium: 96, large: 192 }}
+            sizes="(max-width: 640px) 40px, 48px"
             width="48"
             height="48"
-            decoding="async"
           />
           <div className="min-w-0">
             <h1 className="text-lg sm:text-xl font-bold text-primary truncate">
@@ -194,7 +200,8 @@ const Header = memo(() => {
         </nav>
 
         {/* Botón menú móvil */}
-        <div className="flex items-center xl:hidden">
+        <div className="flex items-center space-x-2 xl:hidden">
+          <ThemeToggle />
           <button
             aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
             onClick={() => setMobileOpen((s) => !s)}
@@ -286,12 +293,15 @@ const Header = memo(() => {
               </Button>
             </AuthDialog>
           )}
+          <div className="ml-2">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
 
       {/* Panel menú móvil */}
       {mobileOpen && (
-        <div className="fixed top-20 left-0 w-full h-[calc(100%-5rem)] bg-white dark:bg-slate-900 z-50 xl:hidden shadow-xl">
+        <div className="fixed top-20 left-0 w-full h-[calc(100%-5rem)] bg-background z-50 xl:hidden shadow-xl">
           <div className="px-6 py-6 space-y-6">
             <nav className="flex flex-col space-y-4">
               <a
