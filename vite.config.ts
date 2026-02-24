@@ -75,50 +75,26 @@ export default defineConfig(({ mode }) => ({
       },
     },
     rollupOptions: {
+      treeshake: "smallest",
       output: {
         manualChunks(id) {
-          if (id.includes("node_modules")) {
-            if (id.includes("react/") || id.includes("react-dom/")) {
-              return "react-core";
-            }
-            if (id.includes("react-router")) {
-              return "react-router";
-            }
-            if (id.includes("@radix-ui") || id.includes("lucide-react")) {
-              return "vendor-ui";
-            }
-            if (id.includes("@tanstack/react-query")) {
-              return "react-query";
-            }
-            if (id.includes("@paypal")) {
-              return "paypal";
-            }
-            if (id.includes("date-fns")) {
-              return "date-utils";
-            }
+          if (!id.includes("node_modules")) return;
+
+          if (id.includes("/node_modules/react/") || id.includes("/node_modules/react-dom/")) {
+            return "react-core";
           }
-          if (id.includes("/src/pages/")) {
-            const pageName = id.split("/src/pages/")[1].split(".")[0];
-            return `page-${pageName}`;
+
+          if (id.includes("/node_modules/react-router/") || id.includes("/node_modules/react-router-dom/")) {
+            return "react-router";
           }
-          if (id.includes("/src/components/") && id.length > 1000) {
-            const componentPath = id.split("/src/components/")[1];
-            const componentName = componentPath.split("/")[0];
-            return `comp-${componentName}`;
-          }
-        },
-        chunkFileNames: "assets/[name]-[hash].js",
-        entryFileNames: "assets/[name]-[hash].js",
-        assetFileNames: (assetInfo) => {
-          // Preservar nombres de archivos responsive sin duplicar hash
-          if (
-            assetInfo.name?.match(
-              /-(?:small|medium|large)\.(webp|jpg|jpeg|png)$/i,
-            )
-          ) {
-            return "assets/[name][extname]";
-          }
-          return "assets/[name]-[hash][extname]";
+
+          // Separar UI libs para no descargar “todo vendor-ui” por un uso mínimo
+          if (id.includes("/node_modules/@radix-ui/")) return "radix";
+          if (id.includes("/node_modules/lucide-react/")) return "icons";
+
+          if (id.includes("/node_modules/@tanstack/react-query/")) return "react-query";
+          if (id.includes("/node_modules/@paypal/")) return "paypal";
+          if (id.includes("/node_modules/date-fns/")) return "date-utils";
         },
       },
     },
