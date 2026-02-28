@@ -40,6 +40,7 @@ const ContactPage = lazy(() => import("./pages/ContactPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const FAQPage = lazy(() => import("./pages/FAQPage"));
+const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 import AdminRoute from "./components/AdminRoute";
 const AchievementSystemInitializer = lazy(
   () => import("./components/AchievementSystemInitializer"),
@@ -154,6 +155,10 @@ const App = () => {
                     />
                     <Route path="/terminos-servicio" element={<TermsPage />} />
                     <Route path="/preguntas-frecuentes" element={<FAQPage />} />
+                    <Route
+                      path="/verificar-email"
+                      element={<VerifyEmailPage />}
+                    />
 
                     {/* RUTA CON PROTECCIÓN LAZY */}
                     <Route

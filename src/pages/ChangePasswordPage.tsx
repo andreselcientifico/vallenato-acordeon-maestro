@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { changePassword } from "@/api/user";
+import { changePassword, resetPassword } from "@/api/user";
 import { Lock, ArrowLeft, Eye, EyeOff } from "lucide-react";
 
 const ChangePasswordPage = () => {
@@ -57,7 +57,7 @@ const ChangePasswordPage = () => {
 
     setLoading(true);
     try {
-      await changePassword(formData.currentPassword, formData.newPassword);
+      await changePassword(formData.currentPassword, formData.newPassword, formData.confirmPassword);
 
       toast({
         title: "Contraseña cambiada",

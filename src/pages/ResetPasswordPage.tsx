@@ -64,7 +64,7 @@ const ResetPasswordPage = () => {
 
     setLoading(true);
     try {
-      await resetPassword(token, formData.password);
+      await resetPassword(token, formData.password, formData.confirmPassword);
       setPasswordReset(true);
 
       toast({

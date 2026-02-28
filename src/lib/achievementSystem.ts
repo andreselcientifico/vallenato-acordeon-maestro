@@ -1,15 +1,7 @@
 import { API_URL } from "@/config/api";
+import { UserAchievement } from "@/api/subscriptions";
 
-export type Achievement = {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  earned?: boolean;
-  earned_at?: string;
-};
-
-type AchievementCallback = (achievement: Achievement) => void;
+type AchievementCallback = (achievement: UserAchievement) => void;
 
 class AchievementSystem {
   private onAchievementEarned: AchievementCallback | null = null;
@@ -18,7 +10,7 @@ class AchievementSystem {
     this.onAchievementEarned = callback;
   }
 
-  notifyAchievement(achievement: Achievement) {
+  notifyAchievement(achievement: UserAchievement) {
     if (this.onAchievementEarned) {
       this.onAchievementEarned(achievement);
     }

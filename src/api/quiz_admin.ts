@@ -40,7 +40,7 @@ export async function createQuiz(dto: AdminCreateQuiz) {
 }
 
 export async function updateQuiz(quizId: string, dto: AdminCreateQuiz) {
-  const res = await fetch(`${API_URL}/api/quiz/edit/${quizId}`, {
+  const res = await fetch(`${API_URL}/api/quiz/${quizId}`, {
     method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -55,7 +55,7 @@ export async function updateQuiz(quizId: string, dto: AdminCreateQuiz) {
 }
 
 export async function deleteQuiz(quizId: string) {
-  const res = await fetch(`${API_URL}/api/quiz/edit/${quizId}`, {
+  const res = await fetch(`${API_URL}/api/quiz/${quizId}`, {
     method: "DELETE",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

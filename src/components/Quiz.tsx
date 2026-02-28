@@ -8,8 +8,8 @@ import {
   QuizAnswer,
   QuizResultDto,
   Quiz,
-  downloadCertificatePDF,
 } from "@/api/quiz";
+import { generateCertificatePDF } from "@/lib/generateCertificatePDF";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -412,19 +412,13 @@ const QuizResult: React.FC<QuizResultProps> = ({ result, onRetry }) => {
             {quizResult?.certificate && (
               <div className="flex-shrink-0">
                 <Button
-                  onClick={async () => {
+                  onClick={() => {
                     try {
-                      const blob = await downloadCertificatePDF(
-                        quizResult.certificate!.id,
-                      );
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `certificate-${quizResult.certificate!.certificate_number}.pdf`;
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-                      window.URL.revokeObjectURL(url);
+                      generateCertificatePDF(quizResult.certificate!);
+                      toast({
+                        title: "Éxito",
+                        description: "Certificado descargado correctamente",
+                      });
                     } catch (err) {
                       console.error(err);
                       toast({

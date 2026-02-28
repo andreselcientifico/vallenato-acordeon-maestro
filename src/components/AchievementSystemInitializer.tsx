@@ -7,7 +7,9 @@ const AchievementSystemInitializer = () => {
 
   useEffect(() => {
     // Configurar el callback para mostrar notificaciones cuando se obtengan logros
-    achievementSystem.setOnAchievementEarned(showAchievement);
+    achievementSystem.setOnAchievementEarned((achievement) =>
+      showAchievement(achievement)
+    );
   }, [showAchievement]);
 
   return null; // Este componente no renderiza nada

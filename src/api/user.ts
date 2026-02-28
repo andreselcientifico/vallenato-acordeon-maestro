@@ -15,11 +15,11 @@ export async function getUserProfile() {
 
 export async function updateUserProfile(profileData) {
   const res = await fetch(`${API_URL}/api/users/profile`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profileData),
-      });
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(profileData),
+  });
 
   const text = await res.text();
 
@@ -51,12 +51,20 @@ export async function deleteUserAccount() {
   return res.json();
 }
 
-export async function changePassword(currentPassword: string, newPassword: string) {
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+) {
   const res = await fetch(`${API_URL}/api/users/change-password`, {
-    method: "POST",
+    method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ currentPassword, newPassword }),
+    body: JSON.stringify({
+      oldPassword: currentPassword,
+      newPassword: newPassword,
+      confirmNewPassword: confirmPassword,
+    }),
   });
 
   if (!res.ok) {
@@ -68,7 +76,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
 }
 
 export async function requestPasswordReset(email: string) {
-  const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
+  const res = await fetch(`${API_URL}/auth/forgot-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
@@ -82,11 +90,19 @@ export async function requestPasswordReset(email: string) {
   return res.json();
 }
 
-export async function resetPassword(token: string, newPassword: string) {
-  const res = await fetch(`${API_URL}/api/auth/reset-password`, {
-    method: "POST",
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+  confirmPassword: string,
+) {
+  const res = await fetch(`${API_URL}/auth/reset-password`, {
+    method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, newPassword }),
+    body: JSON.stringify({
+      token: token,
+      newPassword: newPassword,
+      confirmNewPassword: confirmPassword,
+    }),
   });
 
   if (!res.ok) {
@@ -112,6 +128,22 @@ export async function updateNotificationSettings(settings: {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || "Error al actualizar las notificaciones");
+  }
+
+  return res.json();
+}
+
+export async function verifyEmail(token: string) {
+  const res = await fetch(`${API_URL}/auth/verify?token=${token}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Error al verificar el correo");
   }
 
   return res.json();
