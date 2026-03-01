@@ -2,8 +2,10 @@ import { Music, Mail, Phone, MapPin, Instagram, Facebook } from "lucide-react";
 import { Button } from "./ui/button";
 import { logo } from "@/util/imageImports";
 import { ResponsiveImage } from "./ui/ResponsiveImage";
+import { useNavigate } from "react-router-dom";
 
 const Footer = () => {
+  const navigate = useNavigate();
   return (
     <footer
       id="contacto"
@@ -188,7 +190,7 @@ const Footer = () => {
             </div>
 
             <div className="mt-8">
-              <Button variant="hero" className="w-full shadow-elegant">
+              <Button variant="hero" className="w-full shadow-elegant" onClick={() => navigate("/cursos")}>
                 <Music className="h-4 w-4 mr-2" />
                 Explorar Cursos
               </Button>

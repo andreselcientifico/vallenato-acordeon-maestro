@@ -16,7 +16,7 @@ export interface ContactFormData {
 }
 
 export async function sendContactEmail(data: ContactFormData) {
-  return await fetch(`${API_URL}/email/contact`, {
+  return await fetch(`${API_URL}/auth/contact`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
