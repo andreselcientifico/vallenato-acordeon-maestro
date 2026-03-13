@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import AdminQuizEditor from "@/components/AdminQuizEditor";
-import EmailBroadcast from "@/components/EmailBroadcast";
+import { PresentacionVideoManager } from "@/components/PresentacionVideoManager";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -849,6 +849,15 @@ const AdminPage = () => {
               <h1 className="text-xl sm:text-2xl font-bold text-vallenato-red">
                 Panel de Administración
               </h1>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/admin/inbox")}
+                className="ml-4 border-vallenato-red text-vallenato-red hover:bg-vallenato-red hover:text-white flex items-center gap-2"
+              >
+                <span>📥</span>
+                <span className="hidden sm:inline">Bandeja de Emails</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -856,11 +865,12 @@ const AdminPage = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full h-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+          <TabsList className="grid w-full h-full grid-cols-2 md:grid-cols-3 lg:grid-cols-7">
             <TabsTrigger value="create">
               {editingCourse ? "Editar Curso" : "Crear Curso"}
             </TabsTrigger>
             <TabsTrigger value="manage">Gestionar Cursos</TabsTrigger>
+            <TabsTrigger value="presentaciones-videos">Videos Presentaciones</TabsTrigger>
             <TabsTrigger value="create-subscription">
               {editingSubscriptionPlan ? "Editar Plan" : "Crear Plan"}
             </TabsTrigger>
@@ -869,7 +879,6 @@ const AdminPage = () => {
               {editingAchievement ? "Editar Logro" : "Crear Logro"}
             </TabsTrigger>
             <TabsTrigger value="achievements">Logros</TabsTrigger>
-            <TabsTrigger value="emails">📧 Emails</TabsTrigger>
           </TabsList>
 
           {/* CREAR / EDITAR CURSO */}
@@ -1508,6 +1517,20 @@ const AdminPage = () => {
             </Card>
           </TabsContent>
 
+          {/* PRESENTACIONES VIDEOS MANAGER */}
+          <TabsContent value="presentaciones-videos" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-vallenato-red">
+                  Gestionar Videos de las Presentaciones
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PresentacionVideoManager />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* SUBSCRIPTIONS TAB */}
           <TabsContent value="subscriptions" className="space-y-6">
             <Card>
@@ -2035,11 +2058,6 @@ const AdminPage = () => {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* EMAILS TAB */}
-          <TabsContent value="emails" className="space-y-6">
-            <EmailBroadcast />
           </TabsContent>
         </Tabs>
 

@@ -26,7 +26,7 @@ const processImages = async (dir, label) => {
   const files = readdirSync(dir).filter((file) => {
     const filePath = join(dir, file);
     if (!statSync(filePath).isFile()) return false;
-    if (!/\.(webp|jpg|jpeg|png)$/i.test(file)) return false;
+    if (!/\.(webp|jpg|jpeg|png|avif)$/i.test(file)) return false;
     if (
       file.includes("-small") ||
       file.includes("-medium") ||
@@ -65,7 +65,7 @@ const processImages = async (dir, label) => {
         sizes.map(async ({ suffix, width }) => {
           const outputPath = join(
             outputDir,
-            `${nameWithoutExt}-${suffix}.webp`,
+            `${nameWithoutExt}-${suffix}.avif`,
           );
 
           await sharp(inputPath)
@@ -73,7 +73,7 @@ const processImages = async (dir, label) => {
               fit: "inside",
               withoutEnlargement: true,
             })
-            .webp({ quality: 80, effort: 6 })
+            .avif({ quality: 50, effort: 9 })
             .toFile(outputPath);
 
           console.log(`    ✓ ${suffix} generado en ${outputDir}`);
@@ -88,7 +88,7 @@ const processImages = async (dir, label) => {
 const optimizeLogosAndIcons = async () => {
   console.log("\n🎨 Optimizando logos:");
 
-  const logoPath = "./src/assets/vallenato-logo.webp";
+  const logoPath = "./src/assets/vallenato-logo.avif";
   if (!existsSync(logoPath)) {
     console.log("  ⚠️  Logo no encontrado en src/assets");
     return;
@@ -97,15 +97,14 @@ const optimizeLogosAndIcons = async () => {
   const logoSizes = [
     { suffix: "small", width: 48 },
     { suffix: "medium", width: 96 },
-    { suffix: "large", width: 192 },
   ];
 
   for (const { suffix, width } of logoSizes) {
-    const outputPath = join(outputBaseDir, `vallenato-logo-${suffix}.webp`);
+    const outputPath = join(outputBaseDir, `vallenato-logo-${suffix}.avif`);
     try {
       await sharp(logoPath)
         .resize(width, width)
-        .webp({ quality: 90, effort: 6 })
+        .avif({ quality: 50, effort: 9 })
         .toFile(outputPath);
       console.log(`  ✓ ${suffix} (${width}px) generado`);
     } catch (error) {
@@ -117,7 +116,7 @@ const optimizeLogosAndIcons = async () => {
 const optimizeHeroBackground = async () => {
   console.log("\n🖼️  Optimizando hero background:");
 
-  const heroPath = "./src/assets/hero-background.webp";
+  const heroPath = "./src/assets/hero-background.avif";
   if (!existsSync(heroPath)) {
     console.log("  ⚠️  Hero background no encontrado en src/assets");
     return;
@@ -126,15 +125,14 @@ const optimizeHeroBackground = async () => {
   const heroSizes = [
     { suffix: "small", width: 640 },
     { suffix: "medium", width: 1280 },
-    { suffix: "large", width: 1920 },
   ];
 
   for (const { suffix, width } of heroSizes) {
-    const outputPath = join(outputBaseDir, `hero-background-${suffix}.webp`);
+    const outputPath = join(outputBaseDir, `hero-background-${suffix}.avif`);
     try {
       await sharp(heroPath)
         .resize(width, null, { fit: "cover" })
-        .webp({ quality: 85, effort: 6 })
+        .avif({ quality: 50, effort: 9 })
         .toFile(outputPath);
       console.log(`  ✓ ${suffix} (${width}px) generado`);
     } catch (error) {
@@ -151,7 +149,7 @@ const showDirectoryStructure = () => {
     if (existsSync(path)) {
       const files = readdirSync(path).filter(
         (f) =>
-          /\.(webp|jpg|jpeg|png)$/i.test(f) && statSync(join(path, f)).isFile(),
+          /\.(webp|jpg|jpeg|png|avif)$/i.test(f) && statSync(join(path, f)).isFile(),
       );
       console.log(`  ✓ ${label} (${path}): ${files.length} archivos`);
     } else {

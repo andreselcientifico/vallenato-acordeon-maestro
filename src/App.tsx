@@ -41,6 +41,9 @@ const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const FAQPage = lazy(() => import("./pages/FAQPage"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
+const EventsPage = lazy(() => import("./pages/EventsPage"));
+const PerformanceGalleryPage = lazy(() => import("./pages/PerformanceGalleryPage"));
+const AdminInboxPage = lazy(() => import("./pages/admin/AdminInboxPage"));
 import AdminRoute from "./components/AdminRoute";
 const AchievementSystemInitializer = lazy(
   () => import("./components/AchievementSystemInitializer"),
@@ -149,6 +152,8 @@ const App = () => {
                       element={<ResetPasswordPage />}
                     />
                     <Route path="/contacto" element={<ContactPage />} />
+                    <Route path="/eventos" element={<EventsPage />} />
+                    <Route path="/galeria-presentaciones" element={<PerformanceGalleryPage />} />
                     <Route
                       path="/politica-privacidad"
                       element={<PrivacyPage />}
@@ -166,6 +171,14 @@ const App = () => {
                       element={
                         <AdminRoute>
                           <AdminPage />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/inbox"
+                      element={
+                        <AdminRoute>
+                          <AdminInboxPage />
                         </AdminRoute>
                       }
                     />

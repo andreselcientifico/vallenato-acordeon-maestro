@@ -148,13 +148,11 @@ const Header = memo(() => {
             src={logo.original}
             srcSmall={logo.small}
             srcMedium={logo.medium}
-            srcLarge={logo.large}
+            srcLarge={logo.original}
             alt="Vallenato Academy"
             className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover shadow-warm animate-glow"
             widths={{ small: 48, medium: 96, large: 192 }}
             sizes="(max-width: 640px) 40px, 48px"
-            width="48"
-            height="48"
           />
           <div className="min-w-0">
             <h1 className="text-lg sm:text-xl font-bold text-primary truncate">
@@ -184,6 +182,12 @@ const Header = memo(() => {
             className="text-foreground hover:text-primary transition-smooth text-sm xl:text-base"
           >
             Cursos
+          </a>
+          <a
+            href="/eventos"
+            className="text-foreground hover:text-primary transition-smooth text-sm xl:text-base"
+          >
+            Eventos
           </a>
           <a
             href="/suscripciones"
@@ -326,6 +330,15 @@ const Header = memo(() => {
                 className="text-left text-lg font-medium text-foreground hover:text-primary"
               >
                 Cursos
+              </button>
+              <button
+                onClick={() => {
+                  navigate("/eventos");
+                  setMobileOpen(false);
+                }}
+                className="text-left text-lg font-medium text-foreground hover:text-primary"
+              >
+                Eventos
               </button>
               <button
                 onClick={() => {

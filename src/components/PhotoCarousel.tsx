@@ -51,7 +51,7 @@ const PhotoCarousel = () => {
                   src={image.original}
                   srcSmall={image.small}
                   srcMedium={image.medium}
-                  srcLarge={image.large}
+                  srcLarge={image.original}
                   alt={`Andrea Paola ${index + 1}`}
                   className="w-full h-full object-cover"
                   widths={{ small: 480, medium: 900, large: 1600 }}

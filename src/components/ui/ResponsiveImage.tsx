@@ -1,4 +1,6 @@
 import React from "react";
+import ReactDOM from "react-dom";
+
 
 interface ResponsiveImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -58,6 +60,14 @@ export const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
       `.trim();
       finalSrc = `${cleanDirectory}${fileName}-medium${ext}`;
     }
+  }
+  if (loading === "eager") {
+    ReactDOM.preload(finalSrc, {
+      as: "image",
+      imageSrcSet: finalSrcSet,
+      imageSizes: sizes,
+      fetchPriority: "high",
+    });
   }
 
   return (

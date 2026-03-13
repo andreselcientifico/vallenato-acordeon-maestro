@@ -125,6 +125,18 @@ const Footer = () => {
                 Contacto
               </a>
               <a
+                href="/eventos"
+                className="block text-white/80 hover:text-white transition-smooth"
+              >
+                Eventos
+              </a>
+              <a
+                href="/galeria-presentaciones"
+                className="block text-white/80 hover:text-white transition-smooth"
+              >
+                Galería de Presentaciones
+              </a>
+              <a
                 href="/preguntas-frecuentes"
                 className="block text-white/80 hover:text-white transition-smooth"
               >
